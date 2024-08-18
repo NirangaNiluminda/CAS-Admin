@@ -1,12 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation'; // Import useRouter
 
 export default function QuizForm() {
   const [questions, setQuestions] = useState([{ question: '', answer: '' }]);
+  const router = useRouter(); // Initialize useRouter
 
   const addQuestion = () => {
     setQuestions([...questions, { question: '', answer: '' }]);
+  };
+
+  const handleCancel = () => {
+    router.push('/viewquiz'); // Navigate to the viewquiz page
   };
 
   return (
@@ -19,7 +25,7 @@ export default function QuizForm() {
               placeholder="Quiz Title"
               className="w-[372px] h-[58px] p-4 bg-[#a8f3a7] text-xl font-thin text-black rounded-lg"
             />
-            <select className="px-6 py-1.5 p-4 bg-[#0cdc09]  text-xl font-bold text-black rounded-lg">
+            <select className="px-6 py-1.5 p-4 bg-[#0cdc09] text-xl font-bold text-black rounded-lg">
               <option>Type</option>
             </select>
           </div>
@@ -56,7 +62,7 @@ export default function QuizForm() {
         ))}
 
         <div className="justify-start items-center gap-[62px] inline-flex">
-        <button className="px-6 py-1.5 bg-[#0cdc09] text-1xl font-bold text-black tracking-wider rounded-lg">
+          <button className="px-6 py-1.5 bg-[#0cdc09] text-1xl font-bold text-black tracking-wider rounded-lg">
             Create
           </button>
           <div className="flex items-center gap-[25px]">
@@ -64,7 +70,7 @@ export default function QuizForm() {
               Add More Questions
             </button>
           </div>
-          <button className="px-6 py-1.5 bg-[#0cdc09] text-1xl font-bold text-black tracking-wider rounded-lg">
+          <button onClick={handleCancel} className="px-6 py-1.5 bg-[#0cdc09] text-1xl font-bold text-black tracking-wider rounded-lg">
             Cancel
           </button>
         </div>
@@ -72,6 +78,7 @@ export default function QuizForm() {
     </div>
   );
 }
+
 
 
 
