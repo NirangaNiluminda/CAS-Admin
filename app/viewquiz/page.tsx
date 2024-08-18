@@ -2,8 +2,12 @@
 
 import React from 'react';
 import { Button } from '@nextui-org/button';
-
+import { useRouter } from 'next/navigation'; // Import useRouter
 export default function ViewQuiz() {
+    const router = useRouter(); // Initialize useRouter
+    const handleCheck = () => {
+        router.push('/viewanswer'); // Navigate to the viewquiz page
+      };
   return (
     <div className="w-full h-full px-[20px] py-[39px] bg-white flex justify-center items-center">
       <div className="flex flex-col items-center gap-8">
@@ -28,7 +32,7 @@ export default function ViewQuiz() {
                   <div className="w-[300px]">{student.name}</div>
                   <div className="w-[70px] text-center">{student.marks}</div>
                   <div className="w-[100px] text-center">
-                    <Button color="primary" variant="flat" auto>
+                    <Button onClick={handleCheck} color="primary" variant="flat" >
                       Check
                     </Button>
                   </div>
