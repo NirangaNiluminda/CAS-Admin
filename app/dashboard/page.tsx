@@ -1,7 +1,8 @@
-'use client'
-import React from 'react'
-import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell, getKeyValue } from "@nextui-org/table";
+'use client';
+import React from 'react';
+import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from "@nextui-org/table";
 import { Button } from '@nextui-org/button';
+import { useRouter } from 'next/navigation'; // Import useRouter for navigation
 
 const rows = [
     { key: '1', title: 'Module A.B.C', students: '58', status: 'View Quiz' },
@@ -10,7 +11,13 @@ const rows = [
     { key: '4', title: 'Module J.K.L', students: '24', status: 'View Quiz' },
 ];
 
-const page = () => {
+const Page = () => {
+    const router = useRouter(); // Initialize the router for navigation
+
+    const handleViewQuiz = () => {
+        router.push('/addingquiz'); // Navigate to the quiz creation page
+    };
+
     return (
         <div className="w-full max-w-screen-lg mx-auto px-4 sm:px-6 md:px-8 pt-10 sm:pt-16 pb-10 sm:pb-16 bg-white flex justify-center items-center">
             <div className="w-full sm:w-auto sm:grow shrink basis-0 self-stretch py-6 bg-[#f4f4f4] rounded-3xl border-2 border-[#0cdc09] flex flex-col justify-center items-center gap-14">
@@ -30,7 +37,6 @@ const page = () => {
                                     <path id="Vector_3" d="M32.375 18.5C32.375 26.163 26.163 32.375 18.5 32.375C10.8371 32.375 4.625 26.163 4.625 18.5C4.625 10.8371 10.8371 4.625 18.5 4.625C26.163 4.625 32.375 10.8371 32.375 18.5Z" stroke="#323232" stroke-width="4" />
                                 </g>
                             </svg>
-
                         </TableColumn>
                     </TableHeader>
                     <TableBody>
@@ -39,7 +45,7 @@ const page = () => {
                                 <TableCell>{row.title}</TableCell>
                                 <TableCell>{row.students}</TableCell>
                                 <TableCell>
-                                    <Button color="primary" variant="ghost">
+                                    <Button color="primary" variant="ghost" onClick={handleViewQuiz}>
                                         {row.status}
                                     </Button>
                                 </TableCell>
@@ -49,7 +55,7 @@ const page = () => {
                 </Table>
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default page
+export default Page;
