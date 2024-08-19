@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation'; // Import useRouter
+import { Button } from '@nextui-org/button';
 
 export default function QuizForm() {
   const [questions, setQuestions] = useState([{ question: '', answer: '' }]);
@@ -12,7 +13,7 @@ export default function QuizForm() {
   };
 
   const handleCancel = () => {
-    router.push('/viewquiz'); // Navigate to the viewquiz page
+    router.push('/dashboard'); // Navigate to the dashboard page
   };
 
   return (
@@ -27,6 +28,8 @@ export default function QuizForm() {
             />
             <select className="px-6 py-1.5 p-4 bg-[#0cdc09] text-xl font-bold text-black rounded-lg">
               <option>Type</option>
+              <option>MCQ</option>
+              <option>Essay</option>
             </select>
           </div>
         </div>
@@ -62,17 +65,13 @@ export default function QuizForm() {
         ))}
 
         <div className="justify-start items-center gap-[62px] inline-flex">
-          <button className="px-6 py-1.5 bg-[#0cdc09] text-1xl font-bold text-black tracking-wider rounded-lg">
-            Create
-          </button>
+          <Button color="success" variant="ghost">Create</Button>
           <div className="flex items-center gap-[25px]">
             <button onClick={addQuestion} className="text-2xl font-medium text-black">
               Add More Questions
             </button>
           </div>
-          <button onClick={handleCancel} className="px-6 py-1.5 bg-[#0cdc09] text-1xl font-bold text-black tracking-wider rounded-lg">
-            Cancel
-          </button>
+          <Button color="success" variant="ghost" onClick={handleCancel}>Cancel</Button>
         </div>
       </div>
     </div>

@@ -15,7 +15,7 @@ const Page = () => {
     const router = useRouter(); // Initialize the router for navigation
 
     const handleViewQuiz = () => {
-        router.push('/addingquiz'); // Navigate to the quiz creation page
+        router.push('/viewquiz'); // Navigate to the quiz viewing page
     };
 
     return (
@@ -30,11 +30,11 @@ const Page = () => {
                         <TableColumn key={`title`}>TITLE</TableColumn>
                         <TableColumn key={`students`}>STUDENTS</TableColumn>
                         <TableColumn key={`status`}>
-                            <svg width="37" height="37" viewBox="0 0 37 37" fill="none" className='cursor-pointer transform transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg'>
+                            <svg width="37" height="37" viewBox="0 0 37 37" fill="none" className='cursor-pointer transform transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg' onClick={() => router.push('/addingquiz')}>
                                 <g id="plus-circle-svgrepo-com 1">
-                                    <path id="Vector" d="M13.875 18.5H23.125" stroke="#323232" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-                                    <path id="Vector_2" d="M18.5 13.875V23.125" stroke="#323232" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-                                    <path id="Vector_3" d="M32.375 18.5C32.375 26.163 26.163 32.375 18.5 32.375C10.8371 32.375 4.625 26.163 4.625 18.5C4.625 10.8371 10.8371 4.625 18.5 4.625C26.163 4.625 32.375 10.8371 32.375 18.5Z" stroke="#323232" stroke-width="4" />
+                                    <path id="Vector" d="M13.875 18.5H23.125" stroke="green" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path id="Vector_2" d="M18.5 13.875V23.125" stroke="green" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path id="Vector_3" d="M32.375 18.5C32.375 26.163 26.163 32.375 18.5 32.375C10.8371 32.375 4.625 26.163 4.625 18.5C4.625 10.8371 10.8371 4.625 18.5 4.625C26.163 4.625 32.375 10.8371 32.375 18.5Z" stroke="green" stroke-width="4" />
                                 </g>
                             </svg>
                         </TableColumn>
@@ -45,7 +45,7 @@ const Page = () => {
                                 <TableCell>{row.title}</TableCell>
                                 <TableCell>{row.students}</TableCell>
                                 <TableCell>
-                                    <Button color="primary" variant="ghost" onClick={handleViewQuiz}>
+                                    <Button color="success" variant="ghost" onClick={handleViewQuiz}>
                                         {row.status}
                                     </Button>
                                 </TableCell>
