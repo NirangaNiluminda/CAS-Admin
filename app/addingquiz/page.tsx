@@ -6,6 +6,7 @@ import { Button } from '@nextui-org/button';
 
 export default function QuizForm() {
   const [questions, setQuestions] = useState([{ question: '', answer: '' }]);
+  const [timeLimit, setTimeLimit] = useState(10); // Default time limit is 10 minutes
   const router = useRouter(); // Initialize useRouter
 
   const addQuestion = () => {
@@ -32,10 +33,24 @@ export default function QuizForm() {
               <option>Essay</option>
             </select>
           </div>
+
+          {/* Input for setting the time limit in minutes */}
+          <div className="mt-4">
+            <label htmlFor="timeLimit" className="text-xl font-semibold">Time Limit (Minutes):</label>
+            <input
+              type="number"
+              name="timeLimit"
+              id="timeLimit"
+              value={timeLimit}
+              onChange={(e) => setTimeLimit(Number(e.target.value))}
+              className="ml-4 w-[100px] h-[40px] p-2 bg-[#a8f3a7] text-xl font-thin text-black rounded-lg"
+              min="1" // Minimum time limit of 1 minute
+            />
+          </div>
         </div>
 
         {questions.map((q, index) => (
-          <div key={index} className="self-stretch h-[129px] flex-col justify-start items-start gap-8 flex">
+          <div key={index} className="self-stretch h-[129px] flex-col justify-start items-start gap-8 flex mt-8">
             <div className="self-stretch text-black text-2xl font-semibold">Question {index + 1}</div>
             <div className="self-stretch justify-start items-center gap-[187px] inline-flex">
               <input
@@ -77,8 +92,3 @@ export default function QuizForm() {
     </div>
   );
 }
-
-
-
-
-
