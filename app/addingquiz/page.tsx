@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation'; // Import useRouter
 import { Button } from '@nextui-org/button';
+import { Checkbox } from '@nextui-org/checkbox';
 
 export default function QuizForm() {
   const [questions, setQuestions] = useState([{ question: '', answer: '' }]);
@@ -64,22 +65,77 @@ export default function QuizForm() {
                   setQuestions(newQuestions);
                 }}
               />
-              <input
-                type="text"
-                placeholder="Answers"
-                className="w-[372px] h-[58px] p-4 bg-[#a8f3a7] text-xl font-thin text-black rounded-lg"
-                value={q.answer}
-                onChange={(e) => {
-                  const newQuestions = [...questions];
-                  newQuestions[index].answer = e.target.value;
-                  setQuestions(newQuestions);
-                }}
-              />
+              <div className="flex flex-col space-y-4"> {/* Column to group rows */}
+                {/* Row 1 */}
+                <div className='flex flex-row space-x-4'>
+                  <input
+                    type="text"
+                    placeholder="Answers"
+                    className="w-[372px] h-[58px] p-4 bg-[#a8f3a7] text-xl font-thin text-black rounded-lg"
+                    value={q.answer}
+                    onChange={(e) => {
+                      const newQuestions = [...questions];
+                      newQuestions[index].answer = e.target.value;
+                      setQuestions(newQuestions);
+                    }}
+                  />
+                  <Checkbox />
+                </div>
+
+                {/* Row 2 */}
+                <div className='flex flex-row space-x-4'>
+                  <input
+                    type="text"
+                    placeholder="Answers"
+                    className="w-[372px] h-[58px] p-4 bg-[#a8f3a7] text-xl font-thin text-black rounded-lg"
+                    value={q.answer}
+                    onChange={(e) => {
+                      const newQuestions = [...questions];
+                      newQuestions[index].answer = e.target.value;
+                      setQuestions(newQuestions);
+                    }}
+                  />
+                  <Checkbox />
+                </div>
+
+                {/* Row 3 */}
+                <div className='flex flex-row space-x-4'>
+                  <input
+                    type="text"
+                    placeholder="Answers"
+                    className="w-[372px] h-[58px] p-4 bg-[#a8f3a7] text-xl font-thin text-black rounded-lg"
+                    value={q.answer}
+                    onChange={(e) => {
+                      const newQuestions = [...questions];
+                      newQuestions[index].answer = e.target.value;
+                      setQuestions(newQuestions);
+                    }}
+                  />
+                  <Checkbox />
+                </div>
+
+                {/* Row 4 */}
+                <div className='flex flex-row space-x-4'>
+                  <input
+                    type="text"
+                    placeholder="Answers"
+                    className="w-[372px] h-[58px] p-4 bg-[#a8f3a7] text-xl font-thin text-black rounded-lg"
+                    value={q.answer}
+                    onChange={(e) => {
+                      const newQuestions = [...questions];
+                      newQuestions[index].answer = e.target.value;
+                      setQuestions(newQuestions);
+                    }}
+                  />
+                  <Checkbox />
+                </div>
+              </div>
+
             </div>
           </div>
         ))}
 
-        <div className="justify-start items-center gap-[62px] inline-flex">
+        <div className="gap-[62px] inline-flex">
           <Button color="success" variant="ghost">Create</Button>
           <div className="flex items-center gap-[25px]">
             <button onClick={addQuestion} className="text-2xl font-medium text-black">
