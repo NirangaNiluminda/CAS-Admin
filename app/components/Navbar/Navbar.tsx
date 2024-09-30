@@ -59,7 +59,7 @@ const Navbar = () => {
     return (
         <div className='w-full h-[100px] flex justify-between items-center px-4 mt-2'>
             <div className="w-full h-[100px] border-green-500 border-2 rounded-3xl flex justify-between items-center px-4">
-                <div className="w-10 h-10 cursor-pointer" onClick={() => router.push('/settings')}>{name}</div>
+                <div className="w-10 h-10 cursor-pointer" onClick={() => router.push('#')}>{name}</div>
                 <div className="w-10 h-10">
                     <svg
                         fill="none"
