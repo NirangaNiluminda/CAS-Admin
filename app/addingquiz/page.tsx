@@ -1,28 +1,52 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation';
 import { Button } from '@nextui-org/button';
 import { Checkbox } from '@nextui-org/checkbox';
 
 export default function QuizForm() {
-  const [questions, setQuestions] = useState([{ question: '', answer: '' }]);
+  // State to handle multiple questions and answers
+  const [questions, setQuestions] = useState([
+    { question: '', answers: ['', '', '', ''], correct: [false, false, false, false] },
+  ]);
   const [timeLimit, setTimeLimit] = useState(10); // Default time limit is 10 minutes
-  const router = useRouter(); // Initialize useRouter
+  const router = useRouter();
 
   const addQuestion = () => {
-    setQuestions([...questions, { question: '', answer: '' }]);
+    setQuestions([
+      ...questions,
+      { question: '', answers: ['', '', '', ''], correct: [false, false, false, false] },
+    ]);
   };
 
   const handleCancel = () => {
     router.push('/dashboard'); // Navigate to the dashboard page
   };
 
+  const handleQuestionChange = (index: number, value: string) => {
+    const updatedQuestions = [...questions];
+    updatedQuestions[index].question = value;
+    setQuestions(updatedQuestions);
+  };
+
+  const handleAnswerChange = (qIndex: number, aIndex: number, value: string) => {
+    const updatedQuestions = [...questions];
+    updatedQuestions[qIndex].answers[aIndex] = value;
+    setQuestions(updatedQuestions);
+  };
+
+  const handleCheckboxChange = (qIndex: number, aIndex: number, isChecked: boolean) => {
+    const updatedQuestions = [...questions];
+    updatedQuestions[qIndex].correct[aIndex] = isChecked;
+    setQuestions(updatedQuestions);
+  };
+
   return (
-    <div className="w-[1366px] h-[768px] pl-[217px] pr-[218px] pt-[41px] pb-[42px] bg-white justify-center items-center inline-flex">
-      <div className="grow shrink basis-0 self-stretch flex-col justify-center items-center gap-[35px] inline-flex">
-        <div className="w-[855px] h-[97px] p-6 flex-col justify-start items-start gap-2.5 flex">
-          <div className="self-stretch grow shrink basis-0 justify-between items-center inline-flex">
+    <div className="w-[1366px] h-[768px] pl-[217px] pr-[218px] pt-[41px] pb-[42px] bg-white flex justify-center items-center">
+      <div className="flex flex-col gap-[35px]">
+        <div className="w-[855px] h-[97px] p-6 flex-col gap-2.5 flex">
+          <div className="flex justify-between items-center">
             <input
               type="text"
               placeholder="Quiz Title"
@@ -35,9 +59,11 @@ export default function QuizForm() {
             </select>
           </div>
 
-          {/* Input for setting the time limit in minutes */}
+          {/* Time Limit Input */}
           <div className="mt-4">
-            <label htmlFor="timeLimit" className="text-xl font-semibold">Time Limit (Minutes):</label>
+            <label htmlFor="timeLimit" className="text-xl font-semibold">
+              Time Limit (Minutes):
+            </label>
             <input
               type="number"
               name="timeLimit"
@@ -45,104 +71,51 @@ export default function QuizForm() {
               value={timeLimit}
               onChange={(e) => setTimeLimit(Number(e.target.value))}
               className="ml-4 w-[100px] h-[40px] p-2 bg-[#a8f3a7] text-xl font-thin text-black rounded-lg"
-              min="1" // Minimum time limit of 1 minute
+              min="1"
             />
           </div>
         </div>
 
-        {questions.map((q, index) => (
-          <div key={index} className="self-stretch h-[129px] flex-col justify-start items-start gap-8 flex mt-8">
-            <div className="self-stretch text-black text-2xl font-semibold">Question {index + 1}</div>
-            <div className="self-stretch justify-start items-center gap-[187px] inline-flex">
-              <input
-                type="text"
-                placeholder="Question"
-                className="w-[372px] h-[58px] p-4 bg-[#a8f3a7] text-xl font-thin text-black rounded-lg"
-                value={q.question}
-                onChange={(e) => {
-                  const newQuestions = [...questions];
-                  newQuestions[index].question = e.target.value;
-                  setQuestions(newQuestions);
-                }}
-              />
-              <div className="flex flex-col space-y-4"> {/* Column to group rows */}
-                {/* Row 1 */}
-                <div className='flex flex-row space-x-4'>
+        {questions.map((q, qIndex) => (
+          <div key={qIndex} className="w-full flex flex-col gap-8 mt-8">
+            <div className="text-2xl font-semibold text-black">Question {qIndex + 1}</div>
+            <input
+              type="text"
+              placeholder="Enter Question"
+              className="w-[855px] h-[58px] p-4 bg-[#a8f3a7] text-xl font-thin text-black rounded-lg"
+              value={q.question}
+              onChange={(e) => handleQuestionChange(qIndex, e.target.value)}
+            />
+            <div className="flex flex-col space-y-4">
+              {q.answers.map((answer, aIndex) => (
+                <div key={aIndex} className="flex flex-row items-center space-x-4">
                   <input
                     type="text"
-                    placeholder="Answers"
+                    placeholder={`Answer ${aIndex + 1}`}
                     className="w-[372px] h-[58px] p-4 bg-[#a8f3a7] text-xl font-thin text-black rounded-lg"
-                    value={q.answer}
-                    onChange={(e) => {
-                      const newQuestions = [...questions];
-                      newQuestions[index].answer = e.target.value;
-                      setQuestions(newQuestions);
-                    }}
+                    value={answer}
+                    onChange={(e) => handleAnswerChange(qIndex, aIndex, e.target.value)}
                   />
-                  <Checkbox />
-                </div>
-
-                {/* Row 2 */}
-                <div className='flex flex-row space-x-4'>
-                  <input
-                    type="text"
-                    placeholder="Answers"
-                    className="w-[372px] h-[58px] p-4 bg-[#a8f3a7] text-xl font-thin text-black rounded-lg"
-                    value={q.answer}
-                    onChange={(e) => {
-                      const newQuestions = [...questions];
-                      newQuestions[index].answer = e.target.value;
-                      setQuestions(newQuestions);
-                    }}
+                  <Checkbox
+                    isSelected={q.correct[aIndex]}
+                    onChange={(e) => handleCheckboxChange(qIndex, aIndex, e.target.checked)}
                   />
-                  <Checkbox />
                 </div>
-
-                {/* Row 3 */}
-                <div className='flex flex-row space-x-4'>
-                  <input
-                    type="text"
-                    placeholder="Answers"
-                    className="w-[372px] h-[58px] p-4 bg-[#a8f3a7] text-xl font-thin text-black rounded-lg"
-                    value={q.answer}
-                    onChange={(e) => {
-                      const newQuestions = [...questions];
-                      newQuestions[index].answer = e.target.value;
-                      setQuestions(newQuestions);
-                    }}
-                  />
-                  <Checkbox />
-                </div>
-
-                {/* Row 4 */}
-                <div className='flex flex-row space-x-4'>
-                  <input
-                    type="text"
-                    placeholder="Answers"
-                    className="w-[372px] h-[58px] p-4 bg-[#a8f3a7] text-xl font-thin text-black rounded-lg"
-                    value={q.answer}
-                    onChange={(e) => {
-                      const newQuestions = [...questions];
-                      newQuestions[index].answer = e.target.value;
-                      setQuestions(newQuestions);
-                    }}
-                  />
-                  <Checkbox />
-                </div>
-              </div>
-
+              ))}
             </div>
           </div>
         ))}
 
-        <div className="gap-[62px] inline-flex">
-          <Button color="success" variant="ghost">Create</Button>
-          <div className="flex items-center gap-[25px]">
-            <button onClick={addQuestion} className="text-2xl font-medium text-black">
-              Add More Questions
-            </button>
-          </div>
-          <Button color="success" variant="ghost" onClick={handleCancel}>Cancel</Button>
+        <div className="flex gap-10 mt-8">
+          <Button color="success" variant="ghost">
+            Create
+          </Button>
+          <button onClick={addQuestion} className="text-2xl font-medium text-black">
+            Add More Questions
+          </button>
+          <Button color="success" variant="ghost" onClick={handleCancel}>
+            Cancel
+          </Button>
         </div>
       </div>
     </div>

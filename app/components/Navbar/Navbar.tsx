@@ -1,31 +1,25 @@
-'use client'
+'use client';
 
-
-import { useRouter } from 'next/navigation'
-import React, { use, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAdmin } from '@/app/context/AdminContext';
 
 const Navbar = () => {
-
     const router = useRouter();
-
     const { admin } = useAdmin();
-    // console.log(user);
     const [apiUrl, setApiUrl] = useState('');
     const [name, setName] = useState('');
 
-    // Log the admin when the component renders or when the admin changes
     useEffect(() => {
-        console.log("Admin object:", admin); // Log the admin object
+        console.log("Admin object:", admin);
         if (admin?.name) {
-            setName(admin.name); // Set the admin's name from context if available
+            setName(admin.name);
         }
-    }, [admin]); // Dependency array with admin
+    }, [admin]);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            // This will run only on the client side
             if (window.location.hostname === 'localhost') {
                 setApiUrl('http://localhost:8000');
             } else {
@@ -33,39 +27,25 @@ const Navbar = () => {
             }
         }
     }, []);
+
     const handleLogout = async () => {
         localStorage.removeItem('token');
         sessionStorage.removeItem('token');
         sessionStorage.removeItem('name');
-        console.log("logging out")
+        console.log("logging out");
         router.push('/');
-        //fix below
-        // try {
-        //     const response = await axios.get(`${apiUrl}/api/v1/logout-AdminUser`);
-        //     if (response.status === 200 || response.data.success) {
-        //         console.log(response.data.success);
-        //         router.push('/');
-        //     }
-        //     else {
-        //         alert('Invalid credentials')
-        //     }
-        // }
-        // catch (error) {
-        //     console.error('Error during logout:', error);
-        //     alert('An error occurred. Please try again.');
-        // }
-    }
+    };
 
     return (
-        <div className='w-full h-[100px] flex justify-between items-center px-4 mt-2'>
+        <div className="w-full h-[100px] flex justify-between items-center px-4 mt-2 z-50 relative bg-white">
             <div className="w-full h-[100px] border-green-500 border-2 rounded-3xl flex justify-between items-center px-4">
                 <div className="w-10 h-10 cursor-pointer" onClick={() => router.push('#')}>{name}</div>
                 <div className="w-10 h-10">
                     <svg
                         fill="none"
                         viewBox="0 0 24 24"
-                        onClick={handleLogout} // Add the onClick event
-                        className='cursor-pointer hover:transform hover:scale-110 transition-transform duration-300'
+                        onClick={handleLogout}
+                        className="cursor-pointer hover:transform hover:scale-110 transition-transform duration-300"
                     >
                         <path
                             fill="#000"
@@ -74,10 +54,10 @@ const Navbar = () => {
                             clipRule="evenodd"
                         ></path>
                     </svg>
-                </div> {/* Placeholder for logout */}
+                </div>
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default Navbar
+export default Navbar;
