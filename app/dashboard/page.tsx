@@ -2,33 +2,48 @@
 import React, { useEffect, useState } from 'react';
 import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from "@nextui-org/table";
 import { Button } from '@nextui-org/button';
-import { useRouter } from 'next/navigation'; // Import useRouter for navigation
+import { useRouter } from 'next/navigation';
 import { useAdmin } from '../context/AdminContext'; // Import useAdmin from AdminContext
 import Navbar from '../components/Navbar/Navbar';
 
-const rows = [
-    { key: '1', title: 'Module A.B.C', students: '58', status: 'View Quiz' },
-    { key: '2', title: 'Module D.E.F', students: '42', status: 'View Quiz' },
-    { key: '3', title: 'Module G.H.I', students: '32', status: 'View Quiz' },
-    { key: '4', title: 'Module J.K.L', students: '24', status: 'View Quiz' },
-];
-
 const Page = () => {
-    const router = useRouter(); // Initialize the router for navigation
+    const router = useRouter();
     const { admin } = useAdmin(); // Extract the admin object from AdminContext
     const [name, setName] = useState('');
+    interface Assignment {
+        _id: string;
+        title: string;
+        questions: { length: number }[];
+    }
 
-    const handleViewQuiz = () => {
-        router.push('/viewquiz'); // Navigate to the quiz viewing page
-    };
+    const [assignments, setAssignments] = useState<Assignment[]>([]); // State to hold assignments
 
-    // Log the admin when the component renders or when the admin changes
+    // Fetch assignments when the admin is available
     useEffect(() => {
-        console.log("Admin object:", admin); // Log the admin object
+        const fetchAssignments = async () => {
+            if (admin && admin._id) {
+                try {
+                    const response = await fetch(`http://localhost:4000/api/v1/teacher/${admin._id}`);
+                    const data = await response.json();
+                    if (data.success) {
+                        setAssignments(data.assignments); // Set the assignments from API
+                    }
+                    console.log(`admin: ${admin._id}`);
+                    console.log(`assignments:`, data.assignments);
+                } catch (error) {
+                    console.error('Failed to fetch assignments', error);
+                }
+            }
+        };
+
+        fetchAssignments();
+    }, [admin]); // Run effect only when admin changes
+
+    useEffect(() => {
         if (admin?.name) {
             setName(admin.name); // Set the admin's name from context if available
         }
-    }, [admin]); // Dependency array with admin
+    }, [admin]);
 
     return (
         <>
@@ -40,10 +55,12 @@ const Page = () => {
                             {name ? `Mr. ${name}` : "Mr. A.B.C. Perera"} {/* Display the admin's name */}
                         </div>
                     </div>
-                    <Table aria-label="Example table with dynamic content" className='w-full items-center'>
+                    {/* Display the fetched assignments */}
+                    <Table aria-label="Assignments Table" className='w-full items-center'>
                         <TableHeader>
-                            <TableColumn key={`title`}>TITLE</TableColumn>
-                            <TableColumn key={`students`}>STUDENTS</TableColumn>
+                            <TableColumn>TITLE</TableColumn>
+                            <TableColumn>QUESTIONS</TableColumn>
+                            <TableColumn>VIEW QUIZ</TableColumn>
                             <TableColumn key={`status`}>
                                 <svg width="37" height="37" viewBox="0 0 37 37" fill="none" className='cursor-pointer transform transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg' onClick={() => router.push('/addingquiz')}>
                                     <g id="plus-circle-svgrepo-com 1">
@@ -55,17 +72,27 @@ const Page = () => {
                             </TableColumn>
                         </TableHeader>
                         <TableBody>
-                            {rows.map(row => (
-                                <TableRow key={row.key}>
-                                    <TableCell>{row.title}</TableCell>
-                                    <TableCell>{row.students}</TableCell>
-                                    <TableCell>
-                                        <Button color="success" variant="ghost" onClick={handleViewQuiz}>
-                                            {row.status}
-                                        </Button>
-                                    </TableCell>
+                            {assignments.length > 0 ? (
+                                assignments.map(assignment => (
+                                    <TableRow key={assignment._id}>
+                                        <TableCell>{assignment.title}</TableCell>
+                                        <TableCell>{assignment.questions.length}</TableCell>
+                                        <TableCell>
+                                            <Button color="success" variant="ghost">
+                                                View Quiz
+                                            </Button>
+                                        </TableCell>
+                                        <TableCell> </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell>No assignments found</TableCell>
+                                    <TableCell>No assignments found</TableCell>
+                                    <TableCell>No assignments found</TableCell>
+                                    <TableCell>No assignments found</TableCell>
                                 </TableRow>
-                            ))}
+                            )}
                         </TableBody>
                     </Table>
                 </div>
