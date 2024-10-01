@@ -90,7 +90,7 @@ const Page = () => {
                         <TableBody>
                             {assignments.length > 0 ? (
                                 assignments.map(assignment => (
-                                    <TableRow key={assignment._id}>
+                                    <TableRow key={assignment._id} style={{borderBottom: '1px solid #E2E8F0'}}>
                                         <TableCell>{assignment.title}</TableCell>
                                         <TableCell>{assignment.questions.length}</TableCell>
                                         <TableCell>

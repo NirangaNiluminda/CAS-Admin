@@ -48,7 +48,7 @@ export default function ViewQuiz() {
             </TableHeader>
             <TableBody>
               {quiz.questions.map((question) => (
-                <TableRow key={question.questionText}>
+                <TableRow key={question.questionText} style={{borderBottom: '1px solid #E2E8F0'}}>
                   <TableCell>{question.questionText}</TableCell>
                   <TableCell>
                     <ul>
