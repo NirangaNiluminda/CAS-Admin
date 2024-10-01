@@ -1,51 +1,76 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@nextui-org/button';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter, useParams } from 'next/navigation';
 import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from "@nextui-org/table";
+import { useQuiz } from '../context/QuizContext';
+
+interface Quiz {
+  _id: string;
+  title: string;
+  description: string;
+  questions: {
+    questionText: string;
+    options: {
+      text: string;
+      isCorrect: boolean;
+      _id: string;
+    }[];
+  }[];
+}
 
 export default function ViewQuiz() {
-  const router = useRouter(); // Initialize useRouter
+  const router = useRouter();
+  const { id } = useParams(); // Catch the quiz ID from the URL
+  const {quiz} = useQuiz();
+
   const handleCheck = () => {
-    router.push('/viewanswer'); // Navigate to the viewquiz page
+    router.push(`/viewanswer/${id}`); // Navigate to the answer page using the quiz ID
   };
+
   const handleGoBack = () => {
     router.push('/dashboard');
   };
 
-  const rows = [
-    { name: 'Perera A.B.C.', marks: 18 },
-    { name: 'Perera D.E.F.', marks: 10 },
-    { name: 'Perera G.H.I.', marks: 12 },
-    { name: 'Perera J.K.L.', marks: 19 },
-  ]
   return (
     <div className="w-full h-full px-[20px] py-[39px] bg-white flex justify-center items-center">
       <div className="flex flex-col items-center gap-8">
         <div className="text-center text-black text-[32px] font-bold font-['Inter']">
-          Quiz for Module A.B.C.
+          {quiz ? quiz.title : 'Loading...'}
         </div>
-        <Table aria-label="Example table with dynamic content" className='w-full items-center'>
-          <TableHeader>
-            <TableColumn key={`student`}>Student</TableColumn>
-            <TableColumn key={`marks`}>Marks</TableColumn>
-            <TableColumn key={`check`}>Check</TableColumn>
-          </TableHeader>
-          <TableBody>
-            {rows.map((student, index) => (
-              <TableRow key={student.name}>
-                <TableCell>{student.name}</TableCell>
-                <TableCell>{student.marks}</TableCell>
-                <TableCell>
-                  <Button onClick={handleCheck} color="success" variant="ghost" >
-                    Check
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        {quiz ? (
+          <Table aria-label="Quiz Table" className="w-full items-center">
+            <TableHeader>
+              <TableColumn key="question">Question</TableColumn>
+              <TableColumn key="options">Options</TableColumn>
+              <TableColumn key="check">Check</TableColumn>
+            </TableHeader>
+            <TableBody>
+              {quiz.questions.map((question) => (
+                <TableRow key={question.questionText}>
+                  <TableCell>{question.questionText}</TableCell>
+                  <TableCell>
+                    <ul>
+                      {question.options.map(option => (
+                        <li key={option._id}>
+                          {option.text} {option.isCorrect ? '(Correct)' : ''}
+                        </li>
+                      ))}
+                    </ul>
+                  </TableCell>
+                  <TableCell>
+                    <Button onClick={handleCheck} color="success" variant="ghost">
+                      Check
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <div>Loading Quiz...</div>
+        )}
         <Button className="px-4 py-2" color="success" variant="ghost" onClick={handleGoBack}>
           Go Back
         </Button>
@@ -53,5 +78,3 @@ export default function ViewQuiz() {
     </div>
   );
 }
-
-
