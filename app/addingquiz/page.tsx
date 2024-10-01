@@ -4,9 +4,13 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@nextui-org/button';
 import { Checkbox } from '@nextui-org/checkbox';
+import { useAdmin } from '../context/AdminContext';
+import axios from 'axios';
 
 export default function QuizForm() {
-  // State to handle multiple questions and answers
+  const { admin } = useAdmin(); // Retrieve the admin's info
+  const [title, setTitle] = useState(''); // Title for the quiz
+  const [description, setDescription] = useState('Test your basic math skills'); // Default description
   const [questions, setQuestions] = useState([
     { question: '', answers: ['', '', '', ''], correct: [false, false, false, false] },
   ]);
@@ -42,6 +46,35 @@ export default function QuizForm() {
     setQuestions(updatedQuestions);
   };
 
+  // Handle form submission
+  const handleSubmit = async () => {
+    // Create the data structure to match the backend API's expected payload
+    const quizData = {
+      title,
+      description,
+      timeLimit: timeLimit.toString(), // Convert time limit to string
+      questions: questions.map(q => ({
+        questionText: q.question,
+        options: q.answers.map((answer, idx) => ({
+          text: answer,
+          isCorrect: q.correct[idx],
+        })),
+      })),
+      teacherId: admin?._id, // Admin ID
+    };
+
+    try {
+      // Send the data to the backend
+      const response = await axios.post('http://localhost:4000/api/v1/create', quizData);
+      console.log('Quiz created:', response.data);
+      alert('Quiz created successfully!');
+      router.push('/dashboard'); // Redirect to dashboard after success
+    } catch (error) {
+      alert(`Error creating quiz: ${error}`);
+      console.error('Error creating quiz:', error);
+    }
+  };
+
   return (
     <div className="w-[1366px] h-[768px] pl-[217px] pr-[218px] pt-[41px] pb-[42px] bg-white flex justify-center items-center">
       <div className="flex flex-col gap-[35px]">
@@ -51,6 +84,8 @@ export default function QuizForm() {
               type="text"
               placeholder="Quiz Title"
               className="w-[372px] h-[58px] p-4 bg-[#a8f3a7] text-xl font-thin text-black rounded-lg"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
             />
             <select className="px-6 py-1.5 p-4 bg-[#0cdc09] text-xl font-bold text-black rounded-lg">
               <option>Type</option>
@@ -107,7 +142,7 @@ export default function QuizForm() {
         ))}
 
         <div className="flex gap-10 mt-8">
-          <Button color="success" variant="ghost">
+          <Button color="success" variant="ghost" onClick={handleSubmit}>
             Create
           </Button>
           <button onClick={addQuestion} className="text-2xl font-medium text-black">
