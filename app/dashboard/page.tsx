@@ -11,7 +11,8 @@ const Page = () => {
     const router = useRouter();
     const { admin } = useAdmin(); // Extract the admin object from AdminContext
     const [name, setName] = useState('');
-    const {setQuiz} = useQuiz();
+    const [isCopied, setIsCopied] = useState(false);
+    const { setQuiz } = useQuiz();
     interface Assignment {
         _id: string;
         title: string;
@@ -49,17 +50,33 @@ const Page = () => {
 
     const fetchQuiz = async (id: string) => {
         try {
-          const response = await fetch(`http://localhost:4000/api/v1/${id}`); // Fetch the quiz using the quiz ID
-          const data = await response.json();
-          if (data.success) {
-            setQuiz(data.assignment);
-            console.log(data.assignment);
-            router.push(`/viewquiz`);
-          }
+            const response = await fetch(`http://localhost:4000/api/v1/${id}`); // Fetch the quiz using the quiz ID
+            const data = await response.json();
+            if (data.success) {
+                setQuiz(data.assignment);
+                console.log(data.assignment);
+                router.push(`/viewquiz`);
+            }
         } catch (error) {
-          console.error('Failed to fetch quiz', error);
+            console.error('Failed to fetch quiz', error);
         }
-      };
+    };
+
+    const getQuizLink = (id: string) => {
+        const URL = `http://localhost:3002/${id}`;
+        console.log(URL);
+
+        // Copy the URL to the clipboard
+        navigator.clipboard.writeText(URL).then(() => {
+            console.log('Link copied to clipboard!');
+            setIsCopied(true);
+        }).catch(err => {
+            console.error('Failed to copy link: ', err);
+        });
+
+        return URL;
+    }
+
 
     return (
         <>
@@ -77,6 +94,7 @@ const Page = () => {
                             <TableColumn>TITLE</TableColumn>
                             <TableColumn>QUESTIONS</TableColumn>
                             <TableColumn>VIEW QUIZ</TableColumn>
+                            <TableColumn>GET PUBLIC LINK</TableColumn>
                             <TableColumn key={`status`}>
                                 <svg width="37" height="37" viewBox="0 0 37 37" fill="none" className='cursor-pointer transform transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg' onClick={() => router.push('/addingquiz')}>
                                     <g id="plus-circle-svgrepo-com 1">
@@ -90,12 +108,17 @@ const Page = () => {
                         <TableBody>
                             {assignments.length > 0 ? (
                                 assignments.map(assignment => (
-                                    <TableRow key={assignment._id} style={{borderBottom: '1px solid #E2E8F0'}}>
+                                    <TableRow key={assignment._id} style={{ borderBottom: '1px solid #E2E8F0' }}>
                                         <TableCell>{assignment.title}</TableCell>
                                         <TableCell>{assignment.questions.length}</TableCell>
                                         <TableCell>
                                             <Button color="success" variant="ghost" onClick={async () => await fetchQuiz(assignment._id)}>
                                                 View Quiz
+                                            </Button>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Button color="success" variant="ghost" onClick={() => getQuizLink(assignment._id)}>
+                                                {isCopied === true ? 'Link Copied!' : 'Get Link'}
                                             </Button>
                                         </TableCell>
                                         <TableCell><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -106,6 +129,7 @@ const Page = () => {
                                 ))
                             ) : (
                                 <TableRow>
+                                    <TableCell>No assignments found</TableCell>
                                     <TableCell>No assignments found</TableCell>
                                     <TableCell>No assignments found</TableCell>
                                     <TableCell>No assignments found</TableCell>
