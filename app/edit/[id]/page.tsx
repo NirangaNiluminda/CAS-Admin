@@ -122,15 +122,25 @@ export default function EditQuiz() {
 
     const handleSave = async () => {
         if (editableQuiz) {
+            // Create a copy of the editableQuiz and omit _id fields from questions and options
+            const quizToUpdate = {
+                title: editableQuiz.title,
+                description: editableQuiz.description,
+                questions: editableQuiz.questions.map(({ _id, options, ...restQuestion }) => ({
+                    ...restQuestion, // Spread other properties of the question (like questionText)
+                    options: options.map(({ _id, ...restOption }) => restOption) // Omit the _id from options
+                }))
+            };
+    
             try {
                 const response = await fetch(`http://localhost:4000/api/v1/${id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(editableQuiz)
+                    body: JSON.stringify(quizToUpdate) // Send the modified quiz data without _id fields
                 });
-
+    
                 if (response.ok) {
                     alert('Quiz updated successfully!');
                     router.push('/dashboard');
@@ -142,13 +152,14 @@ export default function EditQuiz() {
             }
         }
     };
+    
 
     const handleGoBack = () => {
         router.push('/dashboard');
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-10 bg-green-500 border-solid border-3 border-green-500">
+        <div className="flex flex-col items-center justify-center min-h-screen p-10 border-solid border-3 border-green-500">
             <div className="w-full max-w-3xl bg-white p-6 rounded-lg shadow-lg border-2 border-green-500">
                 <h1 className="text-3xl font-semibold mb-4 text-center">{editableQuiz ? editableQuiz.title : 'Loading...'}</h1>
                 <p className="text-lg mb-6 text-center">{editableQuiz ? editableQuiz.description : 'Loading...'}</p>
@@ -162,7 +173,7 @@ export default function EditQuiz() {
                             value={question.questionText}
                             onChange={(e) => handleInputChange(e, questionIndex)}
                             placeholder="Enter question text"
-                            className="w-full h-[58px] p-4 bg-[#a8f3a7] text-xl font-thin text-black rounded-lg border-2 border-green-500"
+                            className="w-full h-[58px] p-4 text-xl text-black rounded-lg border-2 border-green-500"
                         />
                         {question.options.map((option, optionIndex) => (
                             <div key={option._id} className="flex items-center mb-2">
