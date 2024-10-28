@@ -78,7 +78,7 @@ const Page = () => {
     }
 
     const getQuizLink = (id: string) => {
-        const URL = `http://localhost:3002/signin/${id}`;
+        const URL = `http://localhost:3001/signin/${id}`;
         console.log(URL);
 
         // Copy the URL to the clipboard
