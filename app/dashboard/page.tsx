@@ -13,7 +13,7 @@ const Page = () => {
     const [name, setName] = useState('');
     const [isCopied, setIsCopied] = useState(false);
     const { setQuiz } = useQuiz();
-    
+
     interface Assignment {
         _id: string;
         title: string;
@@ -109,28 +109,30 @@ const Page = () => {
                             {name ? `Mr. ${name}` : "Mr. A.B.C. Perera"}
                         </div>
                     </div>
-                    
-                    {/* Search bar */}
-                    <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search by quiz title"
-                        className="mb-4 p-2 border border-gray-300 rounded-md w-full"
-                    />
-                    
-                    {/* Sorting options */}
-                    <div className="mb-4">
-                        <label htmlFor="sort" className="mr-2">Sort by:</label>
-                        <select
-                            id="sort"
-                            value={sortOption}
-                            onChange={(e) => setSortOption(e.target.value as 'title' | 'questions')}
-                            className="p-2 border border-gray-300 rounded-md"
-                        >
-                            <option value="title">Title</option>
-                            <option value="questions">Number of Questions</option>
-                        </select>
+
+                    <div className='flex flex-row gap-6'>
+                        {/* Search bar */}
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Search for an assignment"
+                            className="mb-4 p-2 border border-gray-300 rounded-md w-full"
+                        />
+
+                        {/* Sorting options */}
+                        <div className="mb-4 flex justify-between items-center">
+                            <label htmlFor="sort" className="mr-2">Sort by:</label>
+                            <select
+                                id="sort"
+                                value={sortOption}
+                                onChange={(e) => setSortOption(e.target.value as 'title' | 'questions')}
+                                className="p-2 border border-gray-300 rounded-md"
+                            >
+                                <option value="title">Title</option>
+                                <option value="questions">Number of Questions</option>
+                            </select>
+                        </div>
                     </div>
 
                     <Table aria-label="Assignments Table" className='w-full items-center'>
@@ -162,7 +164,7 @@ const Page = () => {
                                         </TableCell>
                                         <TableCell>
                                             <Button color="success" variant="ghost" onClick={() => getQuizLink(assignment._id)}>
-                                                {isCopied ? 'Link Copied!' : 'Get Link'}
+                                                {/* {isCopied ? 'Link Copied!' : 'Get Link'} */} Get Link
                                             </Button>
                                         </TableCell>
                                         <TableCell onClick={() => editQuiz(assignment._id)} className='cursor-pointer'>
