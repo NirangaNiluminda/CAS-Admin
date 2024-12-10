@@ -63,6 +63,8 @@ export default function QuizForm() {
       teacherId: admin?._id, // Admin ID
     };
 
+    console.log(quizData);
+
     try {
       // Send the data to the backend
       const response = await axios.post('http://localhost:4000/api/v1/create', quizData);
