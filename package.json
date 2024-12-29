@@ -10,13 +10,16 @@
   },
   "dependencies": {
     "@nextui-org/button": "^2.0.37",
+    "@nextui-org/checkbox": "^2.1.5",
     "@nextui-org/system": "^2.2.5",
     "@nextui-org/table": "^2.0.39",
     "@nextui-org/theme": "^2.2.9",
+    "axios": "^1.7.7",
     "framer-motion": "^11.3.28",
     "next": "14.2.5",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "react-router-dom": "^6.26.1"
   },
   "devDependencies": {
     "@types/node": "^20",
