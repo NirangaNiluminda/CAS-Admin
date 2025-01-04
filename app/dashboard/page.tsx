@@ -77,7 +77,7 @@ const Page = () => {
     }
 
     const getQuizLink = (id: string) => {
-        const URL = `http://localhost:3001/signin/${id}`;
+        const URL = `http://localhost:4000/signin/${id}`;
         navigator.clipboard.writeText(URL).then(() => {
             setIsCopied(true);
         }).catch(err => {

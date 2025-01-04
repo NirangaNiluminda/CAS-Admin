@@ -21,7 +21,7 @@ const Navbar = () => {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             if (window.location.hostname === 'localhost') {
-                setApiUrl('http://localhost:8000');
+                setApiUrl('http://localhost:4000');
             } else {
                 setApiUrl('http://13.228.36.212');
             }
