@@ -30,7 +30,7 @@ jobs:
       run: npm cache clean --force
     - name: Stop pm2
       run: |
-          pm2 stop 0 && pm2 stop 4
+          pm2 stop 0 && pm2 stop 1
     - name: Install dependencies
       run: |
         npm ci --verbose
@@ -41,4 +41,4 @@ jobs:
 
     - name: Restart the application with PM2
       run: |
-        pm2 restart 0 && pm2 restart 4
+        pm2 restart 0 && pm2 restart 1
