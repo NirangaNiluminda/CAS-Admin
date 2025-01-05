@@ -21,7 +21,7 @@ const Navbar = () => {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             if (window.location.hostname === 'localhost') {
-                setApiUrl('http://localhost:8000');
+                setApiUrl('http://localhost:4000');
             } else {
                 setApiUrl('http://13.228.36.212');
             }
@@ -37,15 +37,20 @@ const Navbar = () => {
     };
 
     return (
-        <div className="w-full h-[100px] flex justify-between items-center px-4 mt-2 z-50 relative bg-white">
-            <div className="w-full h-[100px] border-green-500 border-2 rounded-3xl flex justify-between items-center px-4">
-                <div className="w-10 h-10 cursor-pointer" onClick={() => router.push('#')}>{name}</div>
-                <div className="w-10 h-10">
+        <div className="w-full h-[60px] sm:h-[80px] lg:h-[100px] flex justify-between items-center px-3 sm:px-6 lg:px-8 mt-2 z-50 relative">
+            <div className="w-full h-[60px] sm:h-[80px] lg:h-[100px] border-2 border-green-500 rounded-lg sm:rounded-xl lg:rounded-3xl flex justify-between items-center px-3 sm:px-6 lg:px-8">
+                <div 
+                    className="text-sm sm:text-base lg:text-lg font-semibold cursor-pointer" 
+                    onClick={() => router.push('#')}
+                >
+                    {name}
+                </div>
+                <div className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10">
                     <svg
                         fill="none"
                         viewBox="0 0 24 24"
                         onClick={handleLogout}
-                        className="cursor-pointer hover:transform hover:scale-110 transition-transform duration-300"
+                        className="cursor-pointer hover:scale-110 transition-transform duration-300"
                     >
                         <path
                             fill="#000"
