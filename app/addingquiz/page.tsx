@@ -48,11 +48,10 @@ export default function QuizForm() {
 
   // Handle form submission
   const handleSubmit = async () => {
-    // Create the data structure to match the backend API's expected payload
     const quizData = {
       title,
       description,
-      timeLimit: timeLimit.toString(), // Convert time limit to string
+      timeLimit: timeLimit.toString(),
       questions: questions.map(q => ({
         questionText: q.question,
         options: q.answers.map((answer, idx) => ({
@@ -60,22 +59,52 @@ export default function QuizForm() {
           isCorrect: q.correct[idx],
         })),
       })),
-      teacherId: admin?._id, // Admin ID
+      teacherId: admin?._id,
     };
-
-    console.log(quizData);
-
+  
     try {
-      // Send the data to the backend
-      const response = await axios.post('http://localhost:4000/api/v1/create', quizData);
+      const token = localStorage.getItem('token');
+      console.log('Retrieved token:', token);
+  
+      if (!token) {
+          alert('No authentication token found. Please login.');
+          router.push('/login');
+          return;
+      }
+  
+      const response = await axios.post('http://localhost:4000/api/v1/create-assignment', quizData, {
+          headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+          }
+      });
+  
       console.log('Quiz created:', response.data);
       alert('Quiz created successfully!');
-      router.push('/dashboard'); // Redirect to dashboard after success
-    } catch (error) {
-      alert(`Error creating quiz: ${error}`);
-      console.error('Error creating quiz:', error);
-    }
+      router.push('/dashboard');
+  } catch (error) {
+      console.error('Full error:', error);
+  
+      if (axios.isAxiosError(error)) {
+          if (error.response && error.response.status === 401) {
+              alert('Please login to access this resource');
+              router.push('/login');
+          } else if (error.response && error.response.status === 400) {
+              alert('Bad Request: Please check the data you are sending.');
+          } else {
+              alert(`Error: ${error.message}`);
+          }
+      } else {
+          // Handle non-Axios errors
+          alert('An unexpected error occurred');
+      }
+  }
   };
+
+
+
+
+
 
   return (
     <div className="w-[1366px] h-[768px] pl-[217px] pr-[218px] pt-[41px] pb-[42px] bg-white flex justify-center items-center">
