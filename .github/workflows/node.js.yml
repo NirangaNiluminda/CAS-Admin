@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.x]
+        node-version: [20.15.0]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -25,20 +25,20 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+
     - name: Clear npm cache
       run: npm cache clean --force
     - name: Stop pm2
       run: |
-          pm2 stop 0 && pm2 stop 1
+          pm2 stop all
     - name: Install dependencies
       run: |
         npm ci --verbose
-      timeout-minutes: 10
+ 
     - run: npm run build --if-present
 
     
 
     - name: Restart the application with PM2
       run: |
-        pm2 restart 0 && pm2 restart 1
+        pm2 restart all
