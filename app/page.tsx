@@ -31,7 +31,7 @@ export default function Home() {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             // Client-side API selection
-            setApiUrl(window.location.hostname === 'localhost' ? 'http://localhost:4000' : 'http://54.153.131.173');
+            setApiUrl(window.location.hostname === 'localhost' ? 'http://localhost:4000' : 'http://18.138.252.156');
         }
     }, []);
 
@@ -85,7 +85,7 @@ export default function Home() {
             }
         } catch (error) {
             console.error('Error during sign in:', error);
-            alert(`An error occurred. Please try again. ${error}`);
+            alert(`An errors occurred. Please try again. ${error}`);
         } finally {
             setIsLoading(false);
             setShowLoading(false);
