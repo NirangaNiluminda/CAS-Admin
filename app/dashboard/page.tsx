@@ -23,18 +23,29 @@ const Page = () => {
     const [assignments, setAssignments] = useState<Assignment[]>([]);
     const [searchTerm, setSearchTerm] = useState('');  // State for search term
     const [sortOption, setSortOption] = useState<'title' | 'questions'>('title');  // State for sort option
+    const [assignmentType, setAssignmentType] = useState<'quiz' | 'essay'>('quiz');  // State for assignment type
 
     useEffect(() => {
         const fetchAssignments = async () => {
             if (admin && admin._id) {
                 try {
-                    const response = await fetch(`http://localhost:4000/api/v1/teacher/${admin._id}`);
-                    const data = await response.json();
-                    if (data.success) {
-                        setAssignments(data.assignments);
+                    if (assignmentType === 'quiz') {
+                        const response = await fetch(`http://localhost:4000/api/v1/teacher/${admin._id}`);
+                        const data = await response.json();
+                        if (data.success) {
+                            setAssignments(data.assignments);
+                            console.log(`admin: ${admin._id}`);
+                            console.log(`assignments:`, data.assignments);
+                        }
+                    } else if (assignmentType === 'essay') {
+                        const response = await fetch(`http://localhost:4000/api/v1/essay/teacher/${admin._id}`);
+                        const data = await response.json();
+                        if (data.success) {
+                            setAssignments(data.essayAssignments);
+                            console.log(`admin: ${admin._id}`);
+                            console.log(`assignments:`, data.assignments);
+                        }
                     }
-                    console.log(`admin: ${admin._id}`);
-                    console.log(`assignments:`, data.assignments);
                 } catch (error) {
                     console.error('Failed to fetch assignments', error);
                 }
@@ -42,7 +53,7 @@ const Page = () => {
         };
 
         fetchAssignments();
-    }, [admin]);
+    }, [admin, assignmentType]);
 
     useEffect(() => {
         if (admin?.name) {
@@ -88,16 +99,22 @@ const Page = () => {
     }
 
     // Filter and sort assignments based on search term and selected sort option
-    const filteredAssignments = assignments
-        .filter(assignment => assignment.title.toLowerCase().includes(searchTerm.toLowerCase()))
-        .sort((a, b) => {
-            if (sortOption === 'title') {
-                return a.title.localeCompare(b.title);
-            } else if (sortOption === 'questions') {
-                return b.questions.length - a.questions.length;
-            }
-            return 0;
-        });
+    const filteredAssignments =
+        Array.isArray(assignments)
+            ? assignments
+                .filter((assignment) =>
+                    assignment.title.toLowerCase().includes(searchTerm.toLowerCase())
+                )
+                .sort((a, b) => {
+                    if (sortOption === "title") {
+                        return a.title.localeCompare(b.title);
+                    } else if (sortOption === "questions") {
+                        return b.questions.length - a.questions.length;
+                    }
+                    return 0; // Default sort
+                })
+            : [];
+
 
     return (
         <>
@@ -131,6 +148,20 @@ const Page = () => {
                             >
                                 <option value="title">Title</option>
                                 <option value="questions">Number of Questions</option>
+                            </select>
+                        </div>
+
+                        {/*Assignment type selection to view */}
+                        <div className='mb-4 flex justify-between items-center'>
+                            <label htmlFor="assignment" className="mr-2">Assignment Type:</label>
+                            <select
+                                id="assignment"
+                                className="p-2 border border-gray-300 rounded-md"
+                                value={assignmentType}
+                                onChange={(e) => setAssignmentType(e.target.value as 'quiz' | 'essay')}
+                            >
+                                <option value="quiz">Quiz</option>
+                                <option value="essay">Essay</option>
                             </select>
                         </div>
                     </div>
