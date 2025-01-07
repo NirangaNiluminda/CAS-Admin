@@ -85,7 +85,7 @@ export default function Home() {
             }
         } catch (error) {
             console.error('Error during sign in:', error);
-            alert(`An error occurred. Please try again. ${error}`);
+            alert(`An errors occurred. Please try again. ${error}`);
         } finally {
             setIsLoading(false);
             setShowLoading(false);
