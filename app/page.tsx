@@ -22,6 +22,7 @@ export default function Home() {
 
     const handleRememberMeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setRememberMe(e.target.checked);
+        console.log('Remember Me:', e.target.checked);
     };
 
     const { setAdmin } = useAdmin();
@@ -38,29 +39,45 @@ export default function Home() {
         setIsLoading(true);
         setShowLoading(false);
         setTimeout(() => setShowLoading(true), 500); // 500ms delay before showing the loading component
-
+    
         console.log(formData);
         try {
             const response = await axios.post(`${apiUrl}/api/v1/login-AdminUser`, {
                 email: formData.email,
                 password: formData.password,
             });
-
+    
+            console.log('Response Data:', response.data);
+    
             if (response.status === 200 || response.data.success) {
                 const token = response.data.accessToken;
                 sessionStorage.setItem('name', response.data.user.name);
-                console.log(response.data.success);
-
+    
+                console.log('Token before request:', token);
+    
                 // Store token in either localStorage or sessionStorage based on 'rememberMe'
                 if (rememberMe) {
-                    localStorage.setItem('token', token);
+                    try {
+                        localStorage.setItem('token', token);
+                        console.log('Token stored in localStorage:', localStorage.getItem('token'));
+                    } catch (e) {
+                        console.error('Error storing token in localStorage:', e);
+                    }
                 } else {
+                    localStorage.setItem('token', token);
                     sessionStorage.setItem('token', token);
+                    console.log('Token stored in sessionStorage:', sessionStorage.getItem('token'));
                 }
-
+    
+                // Verify token storage
+                console.log('Token stored in localStorage after setting:', localStorage.getItem('token'));
+                console.log('Token stored in sessionStorage after setting:', sessionStorage.getItem('token'));
+    
                 // Update admin context
                 setAdmin(response.data.user);
-
+                // Set the Authorization header for future requests
+                axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.accessToken}`;
+    
                 // Redirect to dashboard
                 router.push('/dashboard');
             } else {
@@ -74,7 +91,7 @@ export default function Home() {
             setShowLoading(false);
         }
     };
-
+    
     return (
         <div className='w-full h-screen flex justify-center items-center'>
             {isLoading && showLoading ? (

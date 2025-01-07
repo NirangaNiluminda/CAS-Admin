@@ -23,7 +23,7 @@ interface Quiz {
 export default function ViewQuiz() {
   const router = useRouter();
   const { id } = useParams(); // Catch the quiz ID from the URL
-  const {quiz} = useQuiz();
+  const { quiz } = useQuiz();
 
   const handleCheck = () => {
     router.push(`/viewanswer/${id}`); // Navigate to the answer page using the quiz ID
@@ -31,6 +31,76 @@ export default function ViewQuiz() {
 
   const handleGoBack = () => {
     router.push('/dashboard');
+  };
+
+  const handleDownloadExcel = async () => {
+    if (!quiz) {
+      console.error('Quiz data is not available');
+      return;
+    }
+
+    const assignmentId = quiz._id;
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(`http://localhost:4000/api/v1/downloadExcel/${assignmentId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+
+      // Assuming the API returns a file for download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Quiz_${id}.xlsx`; // Customize the filename
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (error) {
+      console.error("Failed to download Excel:", error);
+    }
+  };
+
+  const handleFulDownloadExcel = async () => {
+    if (!quiz) {
+      console.error('Quiz data is not available');
+      return;
+    }
+
+    const assignmentId = quiz._id;
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(`http://localhost:4000/api/v1/downloadFullExcel/${assignmentId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+
+      // Assuming the API returns a file for download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Quiz_${id}.xlsx`; // Customize the filename
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (error) {
+      console.error("Failed to download Excel:", error);
+    }
   };
 
   return (
@@ -48,7 +118,7 @@ export default function ViewQuiz() {
             </TableHeader>
             <TableBody>
               {quiz.questions.map((question) => (
-                <TableRow key={question.questionText} style={{borderBottom: '1px solid #E2E8F0'}}>
+                <TableRow key={question.questionText} style={{ borderBottom: '1px solid #E2E8F0' }}>
                   <TableCell>{question.questionText}</TableCell>
                   <TableCell>
                     <ul>
@@ -71,9 +141,20 @@ export default function ViewQuiz() {
         ) : (
           <div>Loading Quiz...</div>
         )}
+
+        
+        <div className="flex gap-4">
+          <Button className="px-4 py-2" color="primary" variant="flat" onClick={handleDownloadExcel}>
+            Download Excel
+          </Button>
+          <Button className="px-4 py-2" color="primary" variant="flat" onClick={handleFulDownloadExcel}>
+            Download Full Results
+          </Button>
+        </div>
         <Button className="px-4 py-2" color="success" variant="ghost" onClick={handleGoBack}>
           Go Back
         </Button>
+
       </div>
     </div>
   );
