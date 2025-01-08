@@ -27,7 +27,7 @@ const SignUp: React.FC = () => {
             if (window.location.hostname === 'localhost') {
                 setApiUrl('http://localhost:4000');
             } else {
-                setApiUrl('http://18.138.252.156');
+                setApiUrl(`${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}`);
             }
         }
     }, []);

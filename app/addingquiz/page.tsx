@@ -104,8 +104,19 @@ export default function QuizForm() {
 
       console.log(quizData);
 
+      let apiUrl;
+      // Determine the correct API URL based on the hostname
+      if (typeof window !== 'undefined') {
+        if (window.location.hostname === 'localhost') {
+          apiUrl = 'http://localhost:4000';
+        } else {
+          apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+          console.log('Deployment URL:', apiUrl);
+        }
+      }
+
       if (type === 'mcq') {
-        const response = await axios.post('http://localhost:4000/api/v1/create-assignment', quizData, {
+        const response = await axios.post(`${apiUrl}/api/v1/create-assignment`, quizData, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -114,7 +125,7 @@ export default function QuizForm() {
         alert('Assignment created successfully!');
         router.push('/dashboard');
       } else {
-        const response = await axios.post('http://localhost:4000/api/v1/essay/create', quizData, {
+        const response = await axios.post(`${apiUrl}/api/v1/essay/create`, quizData, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',

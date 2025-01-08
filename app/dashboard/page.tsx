@@ -27,33 +27,46 @@ const Page = () => {
 
     useEffect(() => {
         const fetchAssignments = async () => {
+            
             if (admin && admin._id) {
                 try {
+                    let apiUrl;
+                    // Determine the correct API URL based on the hostname
+                    if (typeof window !== 'undefined') {
+                        if (window.location.hostname === 'localhost') {
+                            apiUrl = 'http://localhost:4000';
+                        } else {
+                            apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+                            console.log('Deployment URL:', apiUrl);
+                        }
+                    }
+    
+                    let response;
                     if (assignmentType === 'quiz') {
-                        const response = await fetch(`http://localhost:4000/api/v1/teacher/${admin._id}`);
-                        const data = await response.json();
-                        if (data.success) {
-                            setAssignments(data.assignments);
-                            console.log(`admin: ${admin._id}`);
-                            console.log(`assignments:`, data.assignments);
-                        }
+                        response = await fetch(`${apiUrl}/api/v1/teacher/${admin._id}`);
                     } else if (assignmentType === 'essay') {
-                        const response = await fetch(`http://localhost:4000/api/v1/essay/teacher/${admin._id}`);
-                        const data = await response.json();
-                        if (data.success) {
+                        response = await fetch(`${apiUrl}/api/v1/essay/teacher/${admin._id}`);
+                    }
+    
+                    const data = await response.json();
+                    if (data.success) {
+                        if (assignmentType === 'quiz') {
+                            setAssignments(data.assignments);
+                        } else if (assignmentType === 'essay') {
                             setAssignments(data.essayAssignments);
-                            console.log(`admin: ${admin._id}`);
-                            console.log(`assignments:`, data.assignments);
                         }
+                        console.log(`admin: ${admin._id}`);
+                        console.log(`assignments:`, data.assignments || data.essayAssignments);
                     }
                 } catch (error) {
                     console.error('Failed to fetch assignments', error);
                 }
             }
         };
-
+    
         fetchAssignments();
     }, [admin, assignmentType]);
+    
 
     useEffect(() => {
         if (admin?.name) {
@@ -63,7 +76,17 @@ const Page = () => {
 
     const fetchQuiz = async (id: string) => {
         try {
-            const response = await fetch(`http://localhost:4000/api/v1/${id}`);
+            let apiUrl;
+                    // Determine the correct API URL based on the hostname
+                    if (typeof window !== 'undefined') {
+                        if (window.location.hostname === 'localhost') {
+                            apiUrl = 'http://localhost:4000';
+                        } else {
+                            apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+                            console.log('Deployment URL:', apiUrl);
+                        }
+                    }
+            const response = await fetch(`${apiUrl}/api/v1/${id}`);
             const data = await response.json();
             if (data.success) {
                 setQuiz(data.assignment);
@@ -76,7 +99,17 @@ const Page = () => {
 
     const editQuiz = async (id: string) => {
         try {
-            const response = await fetch(`http://localhost:4000/api/v1/${id}`);
+            let apiUrl;
+                    // Determine the correct API URL based on the hostname
+                    if (typeof window !== 'undefined') {
+                        if (window.location.hostname === 'localhost') {
+                            apiUrl = 'http://localhost:4000';
+                        } else {
+                            apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+                            console.log('Deployment URL:', apiUrl);
+                        }
+                    }
+            const response = await fetch(`${apiUrl}/api/v1/${id}`);
             const data = await response.json();
             if (data.success) {
                 setQuiz(data.assignment);
