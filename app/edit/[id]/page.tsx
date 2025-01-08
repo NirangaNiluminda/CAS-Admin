@@ -144,7 +144,17 @@ export default function EditQuiz() {
             };
     
             try {
-                const response = await fetch(`http://localhost:4000/api/v1/${id}`, {
+                let apiUrl;
+                    // Determine the correct API URL based on the hostname
+                    if (typeof window !== 'undefined') {
+                        if (window.location.hostname === 'localhost') {
+                            apiUrl = 'http://localhost:4000';
+                        } else {
+                            apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+                            console.log('Deployment URL:', apiUrl);
+                        }
+                    }
+                const response = await fetch(`${apiUrl}/api/v1/${id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
