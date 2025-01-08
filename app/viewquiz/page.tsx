@@ -87,8 +87,17 @@ export default function ViewQuiz() {
 
     const assignmentId = quiz._id;
     const token = localStorage.getItem('token');
+    let apiUrl;
+    if (typeof window !== 'undefined') {
+      if (window.location.hostname === 'localhost') {
+        apiUrl = 'http://localhost:4000';
+      } else {
+        apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+        console.log('Deployment URL:', apiUrl);
+      }
+    }
     try {
-      const response = await fetch(`http://localhost:4000/api/v1/downloadFullExcel/${assignmentId}`, {
+      const response = await fetch(`${apiUrl}/api/v1/downloadFullExcel/${assignmentId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
