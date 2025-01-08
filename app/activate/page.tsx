@@ -33,7 +33,7 @@ const Activate = () => {
       if (window.location.hostname === 'localhost') {
         setApiUrl('http://localhost:4000');
       } else {
-        setApiUrl('http://18.138.252.156');
+        setApiUrl('http://52.64.209.177:4000');
       }
     }
   }, []);

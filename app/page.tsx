@@ -31,7 +31,7 @@ export default function Home() {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             // Client-side API selection
-            setApiUrl(window.location.hostname === 'localhost' ? 'http://localhost:4000' : 'http://18.138.252.156');
+            setApiUrl(window.location.hostname === 'localhost' ? 'http://localhost:4000' : process.env.NEXT_PUBLIC_DEPLOYMENT_URL || '');
         }
     }, []);
 
