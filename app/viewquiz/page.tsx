@@ -41,8 +41,19 @@ export default function ViewQuiz() {
 
     const assignmentId = quiz._id;
     const token = localStorage.getItem('token');
+
     try {
-      const response = await fetch(`http://localhost:4000/api/v1/downloadExcel/${assignmentId}`, {
+      let apiUrl;
+      // Determine the correct API URL based on the hostname
+      if (typeof window !== 'undefined') {
+        if (window.location.hostname === 'localhost') {
+          apiUrl = 'http://localhost:4000';
+        } else {
+          apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+          console.log('Deployment URL:', apiUrl);
+        }
+      }
+      const response = await fetch(`${apiUrl}/api/v1/downloadExcel/${assignmentId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -142,7 +153,7 @@ export default function ViewQuiz() {
           <div>Loading Quiz...</div>
         )}
 
-        
+
         <div className="flex gap-4">
           <Button className="px-4 py-2" color="primary" variant="flat" onClick={handleDownloadExcel}>
             Download Excel
