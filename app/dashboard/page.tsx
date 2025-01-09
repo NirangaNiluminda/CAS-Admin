@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAdmin } from '../context/AdminContext';
 import Navbar from '../components/Navbar/Navbar';
 import { useQuiz } from '../context/QuizContext';
+import { useEssay } from '../context/EssayContext';
 
 const Page = () => {
     const router = useRouter();
@@ -13,6 +14,7 @@ const Page = () => {
     const [name, setName] = useState('');
     const [isCopied, setIsCopied] = useState(false);
     const { setQuiz } = useQuiz();
+    const { setEssay } = useEssay();
 
     interface Assignment {
         _id: string;
@@ -27,7 +29,7 @@ const Page = () => {
 
     // useEffect(() => {
     //     const fetchAssignments = async () => {
-            
+
     //         if (admin && admin._id) {
     //             try {
     //                 let apiUrl;
@@ -40,14 +42,14 @@ const Page = () => {
     //                         console.log('Deployment URL:', apiUrl);
     //                     }
     //                 }
-    
+
     //                 let response;
     //                 if (assignmentType === 'quiz') {
     //                     response = await fetch(`${apiUrl}/api/v1/teacher/${admin._id}`);
     //                 } else if (assignmentType === 'essay') {
     //                     response = await fetch(`${apiUrl}/api/v1/essay/teacher/${admin._id}`);
     //                 }
-    
+
     //                 const data = await response.json();
     //                 if (data.success) {
     //                     if (assignmentType === 'quiz') {
@@ -63,10 +65,10 @@ const Page = () => {
     //             }
     //         }
     //     };
-    
+
     //     fetchAssignments();
     // }, [admin, assignmentType]);
-    
+
 
     useEffect(() => {
         const fetchAssignments = async () => {
@@ -82,24 +84,26 @@ const Page = () => {
                             console.log('Deployment URL:', apiUrl);
                         }
                     }
-    
+
                     let response;
                     if (assignmentType === 'quiz') {
                         response = await fetch(`${apiUrl}/api/v1/teacher/${admin._id}`);
                     } else if (assignmentType === 'essay') {
                         response = await fetch(`${apiUrl}/api/v1/essay/teacher/${admin._id}`);
                     }
-    
+
                     if (!response || !response.ok) {
                         throw new Error(`Failed to fetch: ${response?.statusText || 'Unknown error'}`);
                     }
-    
+
                     const data = await response.json();
                     if (data.success) {
                         if (assignmentType === 'quiz') {
                             setAssignments(data.assignments);
+                            setAssignmentType('quiz');
                         } else if (assignmentType === 'essay') {
                             setAssignments(data.essayAssignments);
+                            setAssignmentType('essay');
                         }
                         console.log(`admin: ${admin._id}`);
                         console.log(`assignments:`, data.assignments || data.essayAssignments);
@@ -109,10 +113,10 @@ const Page = () => {
                 }
             }
         };
-    
+
         fetchAssignments();
     }, [admin, assignmentType]);
-    
+
 
     useEffect(() => {
         if (admin?.name) {
@@ -120,23 +124,34 @@ const Page = () => {
         }
     }, [admin]);
 
-    const fetchQuiz = async (id: string) => {
+    const fetchQuiz = async (id: string, assignmentType: string) => {
         try {
             let apiUrl;
-                    // Determine the correct API URL based on the hostname
-                    if (typeof window !== 'undefined') {
-                        if (window.location.hostname === 'localhost') {
-                            apiUrl = 'http://localhost:4000';
-                        } else {
-                            apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
-                            console.log('Deployment URL:', apiUrl);
-                        }
-                    }
-            const response = await fetch(`${apiUrl}/api/v1/${id}`);
-            const data = await response.json();
-            if (data.success) {
-                setQuiz(data.assignment);
-                router.push(`/viewquiz`);
+            // Determine the correct API URL based on the hostname
+            if (typeof window !== 'undefined') {
+                if (window.location.hostname === 'localhost') {
+                    apiUrl = 'http://localhost:4000';
+                } else {
+                    apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+                    console.log('Deployment URL:', apiUrl);
+                }
+            }
+            if (assignmentType === 'quiz') {
+                const response = await fetch(`${apiUrl}/api/v1/${id}`);
+                const data = await response.json();
+                if (data.success) {
+                    setQuiz(data.assignment);
+                    router.push(`/viewquiz`);
+                }
+            }
+            else if (assignmentType === 'essay') {
+                const response = await fetch(`${apiUrl}/api/v1/essay/${id}`);
+                const data = await response.json();
+                console.log(data);
+                if (data.success) {
+                    setEssay(data.essayAssignment);
+                    router.push(`/viewessay`);
+                }
             }
         } catch (error) {
             console.error('Failed to fetch quiz', error);
@@ -146,15 +161,15 @@ const Page = () => {
     const editQuiz = async (id: string) => {
         try {
             let apiUrl;
-                    // Determine the correct API URL based on the hostname
-                    if (typeof window !== 'undefined') {
-                        if (window.location.hostname === 'localhost') {
-                            apiUrl = 'http://localhost:4000';
-                        } else {
-                            apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
-                            console.log('Deployment URL:', apiUrl);
-                        }
-                    }
+            // Determine the correct API URL based on the hostname
+            if (typeof window !== 'undefined') {
+                if (window.location.hostname === 'localhost') {
+                    apiUrl = 'http://localhost:4000';
+                } else {
+                    apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+                    console.log('Deployment URL:', apiUrl);
+                }
+            }
             const response = await fetch(`${apiUrl}/api/v1/${id}`);
             const data = await response.json();
             if (data.success) {
@@ -268,7 +283,7 @@ const Page = () => {
                                         <TableCell>{assignment.title}</TableCell>
                                         <TableCell>{assignment.questions.length}</TableCell>
                                         <TableCell>
-                                            <Button color="success" variant="ghost" onClick={async () => await fetchQuiz(assignment._id)}>
+                                            <Button color="success" variant="ghost" onClick={async () => await fetchQuiz(assignment._id, assignmentType)}>
                                                 View Quiz
                                             </Button>
                                         </TableCell>
