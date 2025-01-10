@@ -4,6 +4,7 @@ import "./globals.css";
 import { AdminProvider } from "./context/AdminContext";
 import Navbar from "./components/Navbar/Navbar";
 import { QuizProvider } from "./context/QuizContext";
+import { EssayProvider } from "./context/EssayContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,8 +24,10 @@ export default function RootLayout({
       <body className={inter.className}>
         <AdminProvider>
           <QuizProvider>
-            <Navbar />
-            {children}
+            <EssayProvider>
+              <Navbar />
+              {children}
+            </EssayProvider>
           </QuizProvider>
         </AdminProvider>
       </body>
