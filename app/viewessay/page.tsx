@@ -7,7 +7,7 @@ import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from 
 import { Button } from '@nextui-org/button';
 import { useRouter } from 'next/navigation';
 
-const page = () => {
+const Page = () => {
     const router = useRouter();
     const { id } = useParams(); // Catch the quiz ID from the URL
     const { essay } = useEssay();
@@ -52,4 +52,4 @@ const page = () => {
     )
 }
 
-export default page
+export default Page
