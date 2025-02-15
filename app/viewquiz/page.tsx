@@ -174,6 +174,15 @@ export default function ViewQuiz() {
         <Button className="px-4 py-2" color="success" variant="ghost" onClick={handleGoBack}>
           Go Back
         </Button>
+        <Button
+          className="px-4 py-2"
+          color="primary"
+          variant="flat"
+          onClick={() => quiz && router.push(`/viewResult/${quiz._id}`)}
+        >
+          View Results
+        </Button>
+
 
       </div>
     </div>
