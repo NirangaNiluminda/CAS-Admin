@@ -323,6 +323,7 @@ interface QuizResult {
   userId: string;
 }
 
+
 const SortIcon = ({ column, sortConfig }: { 
   column: keyof QuizResult; 
   sortConfig: { 
@@ -351,6 +352,9 @@ export default function ViewResult() {
     direction: 'asc' | 'desc';
   }>({ key: null, direction: 'asc' });
 
+  const handleGoBack = () => {
+    router.push('/viewquiz');
+  };
   const handleDownloadExcel = async () => {
     if (!quiz) {
       console.error('Quiz data is not available');
@@ -483,7 +487,7 @@ export default function ViewResult() {
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={() => router.push('/dashboard')}
+                onClick={handleGoBack}
                 className="hover:bg-blue-50"
               >
                 <ArrowLeft className="h-5 w-5 text-blue-600" />

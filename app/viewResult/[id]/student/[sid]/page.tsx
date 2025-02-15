@@ -111,7 +111,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Clock, CheckCircle2, XCircle, ArrowLeft, Trophy } from 'lucide-react';
-
+import { useQuiz } from '../../../../context/QuizContext';
 interface Answer {
   questionId: string;
   selectedOption: string;
@@ -119,11 +119,23 @@ interface Answer {
 }
 export default function ViewResult() {
   const { id, sid } = useParams(); // Get quiz and student IDs from the URL
-  const [quizResults, setQuizResults] = useState([]);
+  
+  const { quiz } = useQuiz();
+  interface QuizResult {
+    score: number;
+    timeTaken: number;
+    totalQuestions: number;
+    answers: Answer[];
+  }
+
+
+  const [quizResults, setQuizResults] = useState<QuizResult | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [mcqData, setMcqData] = useState<Answer[]>([]);
-
+  const handleGoBack = () => {
+    router.push(`/viewResult/${quiz._id}`);
+  };
 
   //   const [result, setResult] = useState(null);
   //   const [loading, setLoading] = useState(true);
@@ -188,9 +200,9 @@ export default function ViewResult() {
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-3xl font-bold text-gray-800">Quiz Results</h1>
-              <button onClick={() => router.push('/dashboard')} className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
+              <button onClick={handleGoBack} className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
                 <ArrowLeft size={20} />
-                Back to Dashboard
+                Back
               </button>
             </div>
             

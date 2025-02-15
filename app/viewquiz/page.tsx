@@ -348,7 +348,7 @@ export default function ViewQuiz() {
             <div className="flex items-center justify-between">
               <Button 
                 variant="ghost" 
-                size="icon"
+                size="sm"
                 onClick={handleGoBack}
                 className="absolute left-4 hover:bg-blue-50"
               >
@@ -375,7 +375,7 @@ export default function ViewQuiz() {
                     <TableHead className="w-[50px] font-semibold text-blue-700">No.</TableHead>
                     <TableHead className="font-semibold text-blue-700">Question</TableHead>
                     <TableHead className="font-semibold text-blue-700">Options</TableHead>
-                    <TableHead className="w-[100px] font-semibold text-blue-700">Action</TableHead>
+                    
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -392,17 +392,7 @@ export default function ViewQuiz() {
                           ))}
                         </ul>
                       </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={handleCheck}
-                          className="w-full bg-blue-100 hover:bg-blue-200 text-blue-700"
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          View
-                        </Button>
-                      </TableCell>
+                      
                     </TableRow>
                   ))}
                 </TableBody>
@@ -414,7 +404,7 @@ export default function ViewQuiz() {
           
           <CardFooter className="p-8 flex flex-wrap gap-4 justify-center bg-gradient-to-r from-blue-50 to-indigo-50">
             <Button
-              variant="outline"
+              variant="bordered"
               onClick={handleDownloadExcel}
               className="border-blue-200 hover:bg-blue-100 text-blue-700"
             >
@@ -422,7 +412,7 @@ export default function ViewQuiz() {
               Download Results
             </Button>
             <Button
-              variant="outline"
+              variant="bordered"
               onClick={handleFullDownloadExcel}
               className="border-blue-200 hover:bg-blue-100 text-blue-700"
             >
@@ -430,7 +420,7 @@ export default function ViewQuiz() {
               Download Full Results
             </Button>
             <Button
-              variant="default"
+              variant="solid"
               onClick={() => router.push(`/viewResult/${quiz._id}`)}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
