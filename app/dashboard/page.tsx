@@ -213,8 +213,8 @@ const Page = () => {
     return (
         <>
             <div className="w-full max-w-screen-lg mx-auto px-4 sm:px-6 md:px-8 pt-10 sm:pt-16 pb-10 sm:pb-16 bg-white flex justify-center items-center">
-                <div className="w-full sm:w-auto sm:grow shrink basis-0 self-stretch py-6 bg-[#f4f4f4] rounded-3xl border-2 border-[#0cdc09] flex flex-col justify-center items-center gap-14">
-                    <div className="w-32 sm:w-44 h-32 sm:h-44 bg-[#aeaeae] rounded-full shadow flex flex-col justify-center items-center gap-6">
+                <div className="w-full sm:w-auto sm:grow shrink basis-0 self-stretch py-6 bg-[#fcfbf9] rounded-3xl border-2 border-[#0cdc09] flex flex-col justify-center items-center gap-14">
+                    <div className="w-32 sm:w-44 h-32 sm:h-44 bg-[#b2f8ba] rounded-full shadow flex flex-col justify-center items-center gap-6">
                         <div className="text-center text-black text-2xl sm:text-3xl font-bold font-['Inter']">Welcome</div>
                         <div className="text-center text-black text-lg sm:text-xl font-medium font-['Inter']">
                             {name ? `Mr. ${name}` : "Mr. A.B.C. Perera"}
