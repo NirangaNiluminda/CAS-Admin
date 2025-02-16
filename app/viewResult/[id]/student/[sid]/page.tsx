@@ -116,6 +116,7 @@ interface Answer {
   questionId: string;
   selectedOption: string;
   _id: string;
+  questionText: string; // Added questionText property
 }
 export default function ViewResult() {
   const { id, sid } = useParams(); // Get quiz and student IDs from the URL
@@ -167,6 +168,7 @@ export default function ViewResult() {
         setQuizResults(data.results); // Set the state
         setMcqData(data.results.answers); //get the answers array only
         console.log('Quiz Results11111:', setQuizResults);
+        
       } catch (error) {
         console.error('Failed to fetch quiz results:', error);
       } finally {
@@ -251,19 +253,17 @@ export default function ViewResult() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Answer ID
-                      </th>
+                      
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {mcqData.map((answer, index) => (
                       <tr key={answer._id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {answer.questionId}
+                          {answer.questionText}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {answer.selectedOption}
+                          {answer.selectedOptionText}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           {answer.isCorrect ? (
@@ -278,9 +278,7 @@ export default function ViewResult() {
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                          {answer._id}
-                        </td>
+                        
                       </tr>
                     ))}
                   </tbody>
