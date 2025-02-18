@@ -350,7 +350,7 @@ export default function ViewQuiz() {
                 variant="ghost" 
                 size="sm"
                 onClick={handleGoBack}
-                className="absolute left-4 hover:bg-blue-50"
+                className="absolute left-4 hover:bg-blue-50 border-0"
               >
                 <ArrowLeft className="h-5 w-5 text-blue-600" />
               </Button>
@@ -402,7 +402,7 @@ export default function ViewQuiz() {
 
           <Separator className="bg-indigo-100" />
           
-          <CardFooter className="p-8 flex flex-wrap gap-4 justify-center bg-gradient-to-r from-blue-50 to-indigo-50">
+          <CardFooter className="p-8 flex flex-wrap gap-4 justify-center bg-gradient-to-r from-blue-50 to-indigo-50 rounded-bl-md rounded-br-md">
             <Button
               variant="bordered"
               onClick={handleDownloadExcel}
