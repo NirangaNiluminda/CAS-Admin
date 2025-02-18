@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@nextui-org/button';
 import { Checkbox } from '@nextui-org/checkbox';
+import { Alert } from '@heroui/alert'; // Import the Alert component from @heroui/alert
 import { useAdmin } from '../context/AdminContext';
 import axios from 'axios';
 
@@ -18,6 +19,8 @@ export default function QuizForm() {
   const [essayQuestion, setEssayQuestion] = useState({ questionText: '', answer: '' });
   const [timeLimit, setTimeLimit] = useState(30);
   const [password, setPassword] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+  const [showAlert, setShowAlert] = useState(false); // State to control the visibility of the alert modal
   const router = useRouter();
 
   const addQuestion = () => {
@@ -25,6 +28,16 @@ export default function QuizForm() {
       ...questions,
       { questionText: '', answers: ['', '', '', ''], correct: [false, false, false, false] },
     ]);
+  };
+
+  const deleteQuestion = (index) => {
+    setQuestions((prev) => prev.filter((_, qIndex) => qIndex !== index));
+    setAlertMessage(`Deleted question ${index + 1}`);
+    setShowAlert(true); // Show the alert modal
+    setTimeout(() => {
+      setShowAlert(false); // Hide the alert modal after 3 seconds
+      setAlertMessage('');
+    }, 1000);
   };
 
   const handleCancel = () => {
@@ -84,16 +97,6 @@ export default function QuizForm() {
       password,
     };
 
-    // const essayData = {
-    //   type,
-    //   title,
-    //   description,
-    //   timeLimit: type === 'essay'? timeLimit.toString() : undefined,
-    //   questions: [essayQuestion],
-    //   teacherId: admin?._id,
-    //   password,
-    // }
-
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -122,8 +125,13 @@ export default function QuizForm() {
             'Content-Type': 'application/json',
           },
         });
-        alert('Assignment created successfully!');
-        router.push('/dashboard');
+        setAlertMessage('Quiz created successfully!');
+        setShowAlert(true); // Show the alert modal
+        setTimeout(() => {
+          setShowAlert(false); // Hide the alert modal after 3 seconds
+          setAlertMessage('');
+          router.push('/dashboard');
+        }, 1000);
       } else {
         const response = await axios.post(`${apiUrl}/api/v1/essay/create`, quizData, {
           headers: {
@@ -131,19 +139,14 @@ export default function QuizForm() {
             'Content-Type': 'application/json',
           },
         });
-        alert('Assignment created successfully!');
-        router.push('/dashboard');
+        setAlertMessage('Quiz created successfully!');
+        setShowAlert(true); // Show the alert modal
+        setTimeout(() => {
+          setShowAlert(false); // Hide the alert modal after 3 seconds
+          setAlertMessage('');
+          router.push('/dashboard');
+        }, 1000);
       }
-
-      // const response = await axios.post('http://localhost:4000/api/v1/create-assignment', quizData, {
-      //   headers: {
-      //     Authorization: `Bearer ${token}`,
-      //     'Content-Type': 'application/json',
-      //   },
-      // });
-
-      // alert('Assignment created successfully!');
-      // router.push('/dashboard');
     } catch (error) {
       console.error('Error creating assignment:', error);
     }
@@ -167,6 +170,14 @@ export default function QuizForm() {
           </select>
         </div>
       </div>
+
+      {showAlert && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <Alert description={alertMessage} title="Success" />
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         <input
@@ -242,6 +253,9 @@ export default function QuizForm() {
                 </div>
               ))}
             </div>
+            <Button color="danger" variant="ghost" onClick={() => deleteQuestion(qIndex)}>
+              Delete Question
+            </Button>
           </div>
         ))}
 
