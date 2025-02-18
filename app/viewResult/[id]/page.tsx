@@ -1,305 +1,3 @@
-// 'use client';
-
-// import React, { useEffect, useState } from 'react';
-// import { useParams, useRouter } from 'next/navigation';
-// import { useQuiz } from '@/app/context/QuizContext';
-// import { Button } from '@nextui-org/button';
-// import { Search, ArrowLeft, Download, SortAsc, SortDesc } from 'lucide-react';
-
-// const SortIcon = ({ column, sortConfig }: { column: keyof QuizResult, sortConfig: { key: keyof QuizResult | null, direction: 'asc' | 'desc' } }) => {
-//   return (
-//     <>
-//       {sortConfig.key === column ? (
-//         sortConfig.direction === 'asc' ? (
-//           <SortAsc className="ml-1 w-4 h-4" />
-//         ) : (
-//           <SortDesc className="ml-1 w-4 h-4" />
-//         )
-//       ) : null}
-//     </>
-//   );
-// };
-// import { Result } from 'postcss';
-// interface QuizResult {
-//   _id: string;
-//   registrationNumber: string;
-//   score: number;
-//   timeTaken: number;
-//   userId: string;
-// }
-
-// export default function ViewResult() {
-//   const { id } = useParams(); // Get quiz ID from URL
-//   const [quizResults, setQuizResults] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const router = useRouter();
-//   const { quiz } = useQuiz();
-  
-  
-//   const [searchTerm, setSearchTerm] = useState('');
-//   const [sortConfig, setSortConfig] = useState<{
-//     key: keyof QuizResult | null;
-//     direction: 'asc' | 'desc';
-//   }>({ key: null, direction: 'asc' });
-  
-
-//   const handleDownloadExcel = async () => {
-//     if (!quiz) {
-//       console.error('Quiz data is not available');
-//       return;
-//     }
-
-//     const assignmentId = quiz._id;
-//     const token = localStorage.getItem('token');
-
-//     try {
-//       let apiUrl;
-//       // Determine the correct API URL based on the hostname
-//       if (typeof window !== 'undefined') {
-//         if (window.location.hostname === 'localhost') {
-//           apiUrl = 'http://localhost:4000';
-//         } else {
-//           apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
-//           console.log('Deployment URL:', apiUrl);
-//         }
-//       }
-//       const response = await fetch(`${apiUrl}/api/v1/downloadExcel/${assignmentId}`, {
-//         method: 'GET',
-//         headers: {
-//           'Content-Type': 'application/json',
-//           'Authorization': `Bearer ${token}`,
-//         },
-//       });
-
-//       if (!response.ok) {
-//         throw new Error(`Error: ${response.statusText}`);
-//       }
-
-//       // Assuming the API returns a file for download
-//       const blob = await response.blob();
-//       const url = window.URL.createObjectURL(blob);
-//       const a = document.createElement('a');
-//       a.href = url;
-//       a.download = `Quiz_${id}.xlsx`; // Customize the filename
-//       document.body.appendChild(a);
-//       a.click();
-//       a.remove();
-//     } catch (error) {
-//       console.error("Failed to download Excel:", error);
-//     }
-//   };
-
-//   const handleSort = (key: keyof QuizResult) => {
-//     setSortConfig({
-//       key,
-//       direction: 
-//         sortConfig.key === key && sortConfig.direction === 'asc' 
-//           ? 'desc' 
-//           : 'asc',
-//     });
-//   };
-  
-//   const filteredResults = quizResults
-//     .filter(result => 
-//       result.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       result.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       result.score.toString().includes(searchTerm)
-//     )
-//     .sort((a, b) => {
-//       if (!sortConfig.key) return 0;
-      
-//       const aValue = a[sortConfig.key];
-//       const bValue = b[sortConfig.key];
-      
-//       if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-//       if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-//       return 0;
-//     });
-
-
-//   useEffect(() => {
-//     const fetchResults = async () => {
-//       const token = localStorage.getItem('token');
-//       let apiUrl;
-
-//       if (typeof window !== 'undefined') {
-//         apiUrl =
-//           window.location.hostname === 'localhost'
-//             ? 'http://localhost:4000'
-//             : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
-//       }
-
-//       try {
-//         const response = await fetch(`${apiUrl}/api/v1/results/${id}`, {
-//           headers: {
-//             Authorization: `Bearer ${token}`,
-//           },
-//         });
-
-//         if (!response.ok) {
-//           throw new Error(`Error: ${response.statusText}`);
-//         }
-
-//         const data = await response.json();
-//         setQuizResults(data.results); // Store the results array
-//         console.log('Quiz Results:',data._id);
-//       } catch (error) {
-//         console.error('Failed to fetch quiz results:', error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchResults();
-//   }, [id]);
-
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-//       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-//         {/* Header */}
-//         <div className="px-6 py-4 border-b border-gray-200">
-//           <div className="flex items-center justify-between">
-//             <h2 className="text-2xl font-bold text-gray-800">Quiz Results</h2>
-//             <button
-//               onClick={() => router.push('/dashboard')}
-//               className="inline-flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
-//             >
-//               <ArrowLeft className="w-4 h-4 mr-2" />
-//               Back to Dashboard
-//             </button>
-//           </div>
-//         </div>
-
-//         {/* Search and Actions */}
-//         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-//           <div className="flex items-center justify-between">
-//             <div className="relative">
-//               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-//                 <Search className="h-5 w-5 text-gray-400" />
-//               </div>
-//               <input
-//                 type="text"
-//                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-//                 placeholder="Search students..."
-//                 value={searchTerm}
-//                 onChange={(e) => setSearchTerm(e.target.value)}
-//               />
-//             </div>
-//             <button
-//               onClick={handleDownloadExcel}
-//               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-//             >
-//               <Download className="w-4 h-4 mr-2" />
-//               Export Results
-//             </button>
-//           </div>
-//         </div>
-
-//         {/* Table */}
-//         <div className="overflow-x-auto">
-//           <table className="min-w-full divide-y divide-gray-200">
-//             <thead className="bg-gray-50">
-//               <tr>
-                
-//                 <th 
-//                   scope="col" 
-//                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-//                   onClick={() => handleSort('registrationNumber')}
-//                 >
-//                   <div className="flex items-center">
-//                     Student
-//                     <SortIcon column="registrationNumber" sortConfig={sortConfig} />
-//                   </div>
-//                 </th>
-//                 <th 
-//                   scope="col" 
-//                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-//                   onClick={() => handleSort('score')}
-//                 >
-//                   <div className="flex items-center">
-//                     Score
-//                     <SortIcon column="score" sortConfig={sortConfig} />
-//                   </div>
-//                 </th>
-//                 <th 
-//                   scope="col" 
-//                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-//                   onClick={() => handleSort('timeTaken')}
-//                 >
-//                   <div className="flex items-center">
-//                     Time Taken
-//                     <SortIcon column="timeTaken" sortConfig={sortConfig} />
-//                   </div>
-//                 </th>
-//                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-//                   ID
-//                 </th>
-//                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-//                   Actions
-//                 </th>
-//               </tr>
-//             </thead>
-//             <tbody className="bg-white divide-y divide-gray-200">
-//               {filteredResults.map((result) => (
-//                 <tr 
-//                   key={result._id}
-//                   className={`${
-//                     (result._id) ? 'bg-blue-50' : ''
-//                   } hover:bg-gray-50 transition-colors duration-150 ease-in-out`}
-//                 >
-                  
-//                   <td className="px-6 py-4 whitespace-nowrap">
-//                     <div className="text-sm font-medium text-gray-900">{result.registrationNumber}</div>
-//                   </td>
-//                   <td className="px-6 py-4 whitespace-nowrap">
-//                     <div className="flex items-center">
-//                       <div className="w-16 bg-gray-200 rounded-full h-2.5">
-//                         <div 
-//                           className="bg-blue-600 h-2.5 rounded-full" 
-//                           style={{ width: `${result.score}%` }}
-//                         ></div>
-//                       </div>
-//                       <span className="ml-2 text-sm text-gray-900">{result.score}%</span>
-//                     </div>
-//                   </td>
-//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-//                     {result.timeTaken.toFixed(1)} min
-//                   </td>
-//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-//                     {result.userId}
-//                   </td>
-//                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-//                     <button
-//                       className="text-blue-600 hover:text-blue-900 font-medium"
-//                       onClick={() => quiz && router.push(`/viewResult/${quiz._id}/student/${result.userId}`)}
-//                     >
-//                       View Details
-//                     </button>
-//                   </td>
-//                 </tr>
-//               ))}
-//             </tbody>
-//           </table>
-//         </div>
-
-//         {/* Footer */}
-//         <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-//           <div className="text-sm text-gray-700">
-//             Showing <span className="font-medium">{filteredResults.length}</span> results
-//             {searchTerm && (
-//               <> filtered from <span className="font-medium">{Result.length}</span> total results</>
-//             )}
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   </div>
-    
-//   );
-// }
-
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -314,6 +12,7 @@ import { ScrollArea } from '../../components/ui/scroll-area';
 import { Input } from '../../components/ui/input';
 import { Progress } from '../../components/ui/progress';
 
+import { Users, Trophy, Clock, BarChart3 } from 'lucide-react';
 
 interface QuizResult {
   _id: string;
@@ -322,14 +21,29 @@ interface QuizResult {
   timeTaken: number;
   userId: string;
 }
+const StatsCard = ({ icon: Icon, label, value, bgColor }: {
+  icon: any;
+  label: string;
+  value: string | number;
+  bgColor: string;
+}) => (
+  <div className={`${bgColor} p-4 rounded-lg flex items-center gap-3`}>
+    <div className="p-2 bg-white/90 rounded-lg">
+      <Icon className="w-5 h-5 text-blue-600" />
+    </div>
+    <div>
+      <p className="text-sm text-gray-600">{label}</p>
+      <p className="text-xl font-bold text-blue-700">{value}</p>
+    </div>
+  </div>
+);
 
-
-const SortIcon = ({ column, sortConfig }: { 
-  column: keyof QuizResult; 
-  sortConfig: { 
-    key: keyof QuizResult | null; 
-    direction: 'asc' | 'desc' 
-  }; 
+const SortIcon = ({ column, sortConfig }: {
+  column: keyof QuizResult;
+  sortConfig: {
+    key: keyof QuizResult | null;
+    direction: 'asc' | 'desc'
+  };
 }) => {
   if (sortConfig.key !== column) return null;
   return sortConfig.direction === 'asc' ? (
@@ -338,14 +52,29 @@ const SortIcon = ({ column, sortConfig }: {
     <SortDesc className="ml-1 w-4 h-4 text-blue-600" />
   );
 };
+// Helper functions for score colors
+function getScoreColor(score: number): string {
+  if (score >= 80) return 'bg-green-500';
+  if (score >= 60) return 'bg-blue-500';
+  if (score >= 40) return 'bg-yellow-500';
+  return 'bg-red-500';
+}
 
+function getScoreTextColor(score: number): string {
+  if (score >= 80) return 'text-green-700';
+  if (score >= 60) return 'text-blue-700';
+  if (score >= 40) return 'text-yellow-700';
+  return 'text-red-700';
+}
 export default function ViewResult() {
   const { id } = useParams();
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { quiz } = useQuiz();
-  
+  const [averageScore, setAverageScore] = useState(0);
+  const [averageTime, setAverageTime] = useState(0);
+  const [totalQuestions, setTotalQuestions] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{
     key: keyof QuizResult | null;
@@ -402,9 +131,9 @@ export default function ViewResult() {
       direction: sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc',
     });
   };
-  
+
   const filteredResults = quizResults
-    .filter(result => 
+    .filter(result =>
       result.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       result.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       result.score.toString().includes(searchTerm)
@@ -442,6 +171,24 @@ export default function ViewResult() {
 
         const data = await response.json();
         setQuizResults(data.results);
+
+        if (data.results.length > 0) {
+          const totalQ = quiz?.questions.length || 3;  // Default to 3 if quiz is undefined
+          setTotalQuestions(totalQ);
+
+          const avgScore = data.results.reduce((acc: number, curr: QuizResult) => acc + curr.score, 0) / data.results.length;
+          setAverageScore(Math.round(avgScore));
+
+          const avgTime = data.results.reduce((acc: number, curr: QuizResult) => acc + curr.timeTaken, 0) / data.results.length;
+          setAverageTime(Number(avgTime.toFixed(1)));
+
+          // **Calculate Pass Rate Correctly**
+          const passThreshold = 0.4; // 40%
+          const passingStudents: number = data.results.filter((result: QuizResult) => (result.score / totalQ) >= passThreshold).length;
+          const passRate = ((passingStudents / data.results.length) * 100).toFixed(2); // Keep two decimal places
+
+          console.log("Corrected Pass Rate:", passRate);
+        }
       } catch (error) {
         console.error('Failed to fetch quiz results:', error);
       } finally {
@@ -450,7 +197,7 @@ export default function ViewResult() {
     };
 
     fetchResults();
-  }, [id]);
+  }, [id, quiz?.questions.length]);
 
   if (loading) {
     return (
@@ -484,8 +231,8 @@ export default function ViewResult() {
         <Card className="backdrop-blur-sm bg-white/90 shadow-xl border border-indigo-100">
           <CardHeader className="space-y-4 pb-8">
             <div className="flex items-center justify-between">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="icon"
                 onClick={handleGoBack}
                 className="hover:bg-blue-50"
@@ -493,10 +240,35 @@ export default function ViewResult() {
                 <ArrowLeft className="h-5 w-5 text-blue-600" />
               </Button>
               <CardTitle className="text-3xl font-bold text-center mx-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">
-                Quiz Results
+                {quiz ? quiz.title : 'Loading...'}
               </CardTitle>
             </div>
-            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+              <StatsCard
+                icon={Users}
+                label="Total Students"
+                value={quizResults.length}
+                bgColor="bg-blue-50"
+              />
+              <StatsCard
+                icon={Trophy}
+                label="Average Score"
+                value={`${averageScore}`}
+                bgColor="bg-green-50"
+              />
+              <StatsCard
+                icon={Clock}
+                label="Average Time"
+                value={`${averageTime} min`}
+                bgColor="bg-yellow-50"
+              />
+              <StatsCard
+                icon={BarChart3}
+                label="Pass Rate"
+                value={`${Math.round((quizResults.filter(r => (r.score / totalQuestions) * 100 >= 40).length / quizResults.length) * 100)}%`}
+                bgColor="bg-purple-50"
+              />
+            </div>
             <div className="flex items-center justify-between mt-6 gap-4">
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -518,15 +290,15 @@ export default function ViewResult() {
               </Button>
             </div>
           </CardHeader>
-          
+
           <Separator className="bg-indigo-100" />
-          
+
           <CardContent className="p-8">
             <ScrollArea className="h-[60vh] rounded-lg border border-indigo-100 bg-white">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gradient-to-r from-blue-50 to-indigo-50">
-                    <TableHead 
+                    <TableHead
                       className="font-semibold text-blue-700 cursor-pointer"
                       onClick={() => handleSort('registrationNumber')}
                     >
@@ -535,7 +307,7 @@ export default function ViewResult() {
                         <SortIcon column="registrationNumber" sortConfig={sortConfig} />
                       </div>
                     </TableHead>
-                    <TableHead 
+                    <TableHead
                       className="font-semibold text-blue-700 cursor-pointer"
                       onClick={() => handleSort('score')}
                     >
@@ -544,7 +316,7 @@ export default function ViewResult() {
                         <SortIcon column="score" sortConfig={sortConfig} />
                       </div>
                     </TableHead>
-                    <TableHead 
+                    <TableHead
                       className="font-semibold text-blue-700 cursor-pointer"
                       onClick={() => handleSort('timeTaken')}
                     >
@@ -553,7 +325,7 @@ export default function ViewResult() {
                         <SortIcon column="timeTaken" sortConfig={sortConfig} />
                       </div>
                     </TableHead>
-                    <TableHead className="font-semibold text-blue-700">ID</TableHead>
+
                     <TableHead className="font-semibold text-blue-700 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -564,17 +336,17 @@ export default function ViewResult() {
                         {result.registrationNumber}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Progress value={result.score} className="w-20" />
-                          <span className="text-sm text-gray-600">{result.score}%</span>
+                        <div className="flex items-center gap-3">
+
+                          <span className="text-sm font-medium" style={{ color: getScoreTextColor(result.score) }}>
+                            {result.score}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell className="text-gray-600">
                         {result.timeTaken.toFixed(1)} min
                       </TableCell>
-                      <TableCell className="font-mono text-sm text-gray-500">
-                        {result.userId}
-                      </TableCell>
+
                       <TableCell className="text-right">
                         <Button
                           variant="secondary"
@@ -594,7 +366,7 @@ export default function ViewResult() {
           </CardContent>
 
           <Separator className="bg-indigo-100" />
-          
+
           <CardFooter className="p-8 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50">
             <div className="text-sm text-gray-600">
               Showing <span className="font-medium text-blue-600">{filteredResults.length}</span> results
@@ -608,3 +380,4 @@ export default function ViewResult() {
     </div>
   );
 }
+
