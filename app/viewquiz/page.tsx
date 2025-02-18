@@ -189,7 +189,6 @@
 //   );
 // }
 
-
 'use client';
 
 import React from 'react';
@@ -199,9 +198,10 @@ import { Button } from '@nextui-org/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/table';
 import { Separator } from '../components/ui/separator';
-import { Download, ArrowLeft, Eye, FileSpreadsheet } from 'lucide-react';
+import { Download, ArrowLeft, Eye, FileSpreadsheet, CheckCircle2, AlertCircle, BookOpen } from 'lucide-react';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { Skeleton } from '../components/ui/skeleton';
+import { Badge } from '../components/ui/badge';
 
 interface Quiz {
   _id: string;
@@ -222,10 +222,6 @@ export default function ViewQuiz() {
   const { id } = useParams();
   const { quiz } = useQuiz();
 
-  const handleCheck = () => {
-    router.push(`/viewanswer/${id}`);
-  };
-
   const handleGoBack = () => {
     router.push('/dashboard');
   };
@@ -242,11 +238,9 @@ export default function ViewQuiz() {
     try {
       let apiUrl;
       if (typeof window !== 'undefined') {
-        if (window.location.hostname === 'localhost') {
-          apiUrl = 'http://localhost:4000';
-        } else {
-          apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
-        }
+        apiUrl = window.location.hostname === 'localhost'
+          ? 'http://localhost:4000'
+          : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
       }
       const response = await fetch(`${apiUrl}/api/v1/downloadExcel/${assignmentId}`, {
         method: 'GET',
@@ -283,11 +277,9 @@ export default function ViewQuiz() {
     const token = localStorage.getItem('token');
     let apiUrl;
     if (typeof window !== 'undefined') {
-      if (window.location.hostname === 'localhost') {
-        apiUrl = 'http://localhost:4000';
-      } else {
-        apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
-      }
+      apiUrl = window.location.hostname === 'localhost'
+        ? 'http://localhost:4000'
+        : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
     }
     try {
       const response = await fetch(`${apiUrl}/api/v1/downloadFullExcel/${assignmentId}`, {
@@ -342,7 +334,7 @@ export default function ViewQuiz() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <Card className="backdrop-blur-sm bg-white/90 shadow-xl border border-indigo-100">
           <CardHeader className="space-y-4 pb-8">
             <div className="flex items-center justify-between">
@@ -354,9 +346,15 @@ export default function ViewQuiz() {
               >
                 <ArrowLeft className="h-5 w-5 text-blue-600" />
               </Button>
-              <CardTitle className="text-3xl font-bold text-center mx-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">
-                {quiz.title}
-              </CardTitle>
+              <div className="text-center mx-auto">
+                <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">
+                  {quiz.title}
+                </CardTitle>
+                <Badge variant="outline" className="mt-2">
+                  <BookOpen className="h-4 w-4 mr-1" />
+                  {quiz.questions.length} Questions
+                </Badge>
+              </div>
             </div>
             {quiz.description && (
               <CardDescription className="text-center mt-2 text-gray-600">
@@ -375,24 +373,37 @@ export default function ViewQuiz() {
                     <TableHead className="w-[50px] font-semibold text-blue-700">No.</TableHead>
                     <TableHead className="font-semibold text-blue-700">Question</TableHead>
                     <TableHead className="font-semibold text-blue-700">Options</TableHead>
-                    
+                    <TableHead className="w-[120px] font-semibold text-blue-700 text-center">Correct Answer</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {quiz.questions.map((question, index) => (
                     <TableRow key={index} className="hover:bg-blue-50/50 transition-colors">
-                      <TableCell className="font-medium text-blue-600">{index + 1}</TableCell>
-                      <TableCell className="text-gray-700">{question.questionText}</TableCell>
-                      <TableCell>
-                        <ul className="list-disc list-inside space-y-1.5">
-                          {question.options.map((option, optIndex) => (
-                            <li key={option._id} className="text-sm text-gray-600">
-                              {option.text}
-                            </li>
-                          ))}
-                        </ul>
+                      <TableCell className="font-medium text-blue-600">
+                        {index + 1}
                       </TableCell>
-                      
+                      <TableCell className="text-gray-700">
+                        {question.questionText}
+                      </TableCell>
+                      <TableCell className="max-w-xl">
+                        <div className="grid grid-cols-1 gap-2">
+                          {question.options.map((option, optIndex) => (
+                            <div 
+                              key={option._id}
+                              className={`p-2 rounded-md text-sm ${
+                                option.isCorrect 
+                                  ? 'bg-green-50 text-green-700 border border-green-200'
+                                  : 'bg-gray-50 text-gray-600 border border-gray-200'
+                              }`}
+                            >
+                              {option.text}
+                            </div>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {question.options.find(opt => opt.isCorrect)?.text}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
