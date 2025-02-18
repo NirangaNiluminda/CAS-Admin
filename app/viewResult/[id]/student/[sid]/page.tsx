@@ -95,7 +95,7 @@ export default function ViewResult() {
   return (
     <div className="w-full h-full px-8 py-12 bg-white flex flex-col items-center">
       {loading ? (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center">
           <div className="animate-pulse text-gray-500">Loading results...</div>
         </div>
       ) : quizResults ? (
