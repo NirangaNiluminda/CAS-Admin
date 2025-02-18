@@ -99,7 +99,7 @@ export default function ViewResult() {
           <div className="animate-pulse text-gray-500">Loading results...</div>
         </div>
       ) : quizResults ? (
-        <div className="min-h-screen bg-gray-50 p-8">
+        <div className="min-h-screen p-8">
           <div className="max-w-6xl mx-auto">
             {/* Header Section */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
