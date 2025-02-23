@@ -7,7 +7,7 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table';
 import { Separator } from '../../components/ui/separator';
-import { Download, ArrowLeft, Eye, Search, SortAsc, SortDesc, AlertTriangle } from 'lucide-react';
+import { Download, ArrowLeft, Eye, Search, SortAsc, SortDesc, AlertTriangle, Tv, TvMinimalIcon } from 'lucide-react';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { Input } from '../../components/ui/input';
 import { Progress } from '../../components/ui/progress';
@@ -156,12 +156,12 @@ export default function ViewResult() {
       if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
-    const getViolationStyle = (count: number): string => {
-      if (count === 0) return 'bg-green-100 text-green-800';
-      if (count <= 5) return 'bg-yellow-100 text-yellow-800';
-      return 'bg-red-100 text-red-800';
-    };
-    
+  const getViolationStyle = (count: number): string => {
+    if (count === 0) return 'bg-green-100 text-green-800';
+    if (count <= 5) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-red-100 text-red-800';
+  };
+
   useEffect(() => {
     const fetchResults = async () => {
       const token = localStorage.getItem('token');
@@ -238,12 +238,12 @@ export default function ViewResult() {
         const resultsData = await resultsResponse.json();
         const violationsData = await violationsResponse.json();
 
-        
 
-        
+
+
         setViolationSummary(violationsData.summary);
         const total = violationsData.summary.reduce(
-          (sum: number, student: ViolationSummary) => sum + student.totalViolations, 
+          (sum: number, student: ViolationSummary) => sum + student.totalViolations,
           0
         );
         setTotalViolations(total);
@@ -304,6 +304,14 @@ export default function ViewResult() {
               <CardTitle className="text-3xl font-bold text-center mx-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">
                 {quiz ? quiz.title : 'Loading...'}
               </CardTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.push('/dashboard')}
+                className="hover:bg-blue-100"
+              >
+                <TvMinimalIcon className="h-5 w-5 text-blue-600" />
+              </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
               <StatsCard
@@ -388,11 +396,11 @@ export default function ViewResult() {
                       </div>
                     </TableHead>
                     <TableHead className="font-semibold text-blue-700 cursor-pointer">
-          <div className="flex items-center">
-            Violations
-            <SortIcon column="violationCount" sortConfig={sortConfig} />
-          </div>
-        </TableHead>
+                      <div className="flex items-center">
+                        Violations
+                        <SortIcon column="violationCount" sortConfig={sortConfig} />
+                      </div>
+                    </TableHead>
                     <TableHead className="font-semibold text-blue-700 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -414,17 +422,16 @@ export default function ViewResult() {
                         {result.timeTaken.toFixed(1)} min
                       </TableCell>
                       <TableCell>
-            <div className="flex items-center gap-2">
-              <span className={`px-2.5 py-0.5 rounded-full text-sm font-medium ${
-                getViolationStyle(getViolationCount(result.userId))
-              }`}>
-                {getViolationCount(result.userId)}
-              </span>
-              {getViolationCount(result.userId) > 5 && (
-                <AlertTriangle className="h-4 w-4 text-red-500" />
-              )}
-            </div>
-          </TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2.5 py-0.5 rounded-full text-sm font-medium ${getViolationStyle(getViolationCount(result.userId))
+                            }`}>
+                            {getViolationCount(result.userId)}
+                          </span>
+                          {getViolationCount(result.userId) > 5 && (
+                            <AlertTriangle className="h-4 w-4 text-red-500" />
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="secondary"

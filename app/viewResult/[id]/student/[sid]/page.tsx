@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Clock, CheckCircle2, XCircle, ArrowLeft, Trophy, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, ArrowLeft, Trophy, AlertTriangle, ChevronUp, ChevronDown, TvMinimalIcon } from 'lucide-react';
 import { useQuiz } from '../../../../context/QuizContext';
 
 interface Answer {
@@ -161,6 +161,10 @@ export default function ViewResult() {
                 <button onClick={handleGoBack} className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
                   <ArrowLeft size={20} />
                   Back
+                </button>
+                <button onClick={() => router.push('/dashboard')} className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
+                  <TvMinimalIcon size={20} />
+                  Dashboard
                 </button>
               </div>
 
