@@ -5,7 +5,7 @@ import { AdminProvider } from "./context/AdminContext";
 import Navbar from "./components/Navbar/Navbar";
 import { QuizProvider } from "./context/QuizContext";
 import { EssayProvider } from "./context/EssayContext";
-
+import { Toaster } from 'sonner';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -27,6 +27,7 @@ export default function RootLayout({
             <EssayProvider>
               <Navbar />
               {children}
+              <Toaster position="top-center" richColors />
             </EssayProvider>
           </QuizProvider>
         </AdminProvider>
