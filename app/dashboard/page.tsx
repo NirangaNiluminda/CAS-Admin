@@ -31,6 +31,7 @@ import { useQuiz } from '../context/QuizContext';
 import { useEssay } from '../context/EssayContext';
 import { PlusCircle, Eye, Link2, Edit, Search, SortAsc } from 'lucide-react';
 import { toast } from "sonner";
+import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 interface Assignment {
     _id: string;
     title: string;
@@ -163,10 +164,13 @@ export default function Page() {
                 return 0;
             })
         : [];
-
+    useEffect(() => {
+        localStorage.removeItem('currentBreadcrumbs');
+    }, []);
     return (
         <div className="min-h-screen bg-gradient-to-b from-green-50 to-white p-4 md:p-8">
             <div className="max-w-7xl mx-auto">
+                <Breadcrumbs items={[]} />
                 <Card className="border-green-200 shadow-lg">
                     <CardContent className="p-6">
                         {/* Profile Section */}
@@ -224,7 +228,7 @@ export default function Page() {
                             <div className="relative">
                                 <Select value={assignmentType} onValueChange={(value) => setAssignmentType(value as 'quiz' | 'essay')}>
                                     <SelectTrigger className="w-full">
-                                    <SortAsc className="h-4 w-4 mr-2" />
+                                        <SortAsc className="h-4 w-4 mr-2" />
                                         <SelectValue placeholder="Assignment type..." />
                                     </SelectTrigger>
                                     <SelectContent
