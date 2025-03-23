@@ -10,7 +10,7 @@ import { Label } from '../../components/ui/label';
 import { PlusCircle, MinusCircle, Save, ArrowLeft, Loader2 } from 'lucide-react';
 import { Separator } from '../../components/ui/separator';
 import { toast } from 'sonner';
-
+import { Breadcrumbs } from '../../components/ui/Breadcrumbs';
 interface Option {
     text: string;
     isCorrect: boolean;
@@ -178,14 +178,27 @@ export default function EditQuiz() {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12 px-4">
+                <div className="max-w-4xl mx-auto">
+                    <Breadcrumbs items={[{ label: 'Loading Quiz...' }]} />
+                    <div className="flex items-center justify-center min-h-[60vh]">
+                        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+                    </div>
+                </div>
             </div>
         );
     }
 
     return (
         <div className="container mx-auto py-8 px-4 max-w-4xl">
+            {editableQuiz && (
+                    <Breadcrumbs 
+                        items={[
+                            { label: editableQuiz.title, href: '/viewquiz' },
+                            { label: 'Edit' }
+                        ]} 
+                    />
+                )}
             <Card className="mb-8">
                 <CardHeader>
                     <CardTitle className="text-3xl">{editableQuiz?.title}</CardTitle>
