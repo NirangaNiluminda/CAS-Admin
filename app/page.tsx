@@ -25,6 +25,7 @@ export default function Home() {
     });
     const [rememberMe, setRememberMe] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [showLoading, setShowLoading] = useState(false);
     const { setAdmin } = useAdmin();
     const [apiUrl, setApiUrl] = useState('');
 
@@ -80,6 +81,8 @@ export default function Home() {
         }
 
         setIsLoading(true);
+        setShowLoading(false);
+        setTimeout(() => setShowLoading(true), 500); // 500ms delay before showing the loading component
 
         try {
             const response = await axios.post(`${apiUrl}/api/v1/login-AdminUser`, {
@@ -87,17 +90,33 @@ export default function Home() {
                 password: formData.password,
             });
 
+            console.log('Response Data:', response.data);
+
             if (response.status === 200 || response.data.success) {
                 const token = response.data.accessToken;
                 sessionStorage.setItem('name', response.data.user.name);
 
+                console.log('Token before request:', token);
+
+                // Store token in either localStorage or sessionStorage based on 'rememberMe'
                 if (rememberMe) {
-                    localStorage.setItem('token', token);
+                    try {
+                        localStorage.setItem('token', token);
+                        console.log('Token stored in localStorage:', localStorage.getItem('token'));
+                    } catch (e) {
+                        console.error('Error storing token in localStorage:', e);
+                    }
                 } else {
+                    // For non-remember-me, store in sessionStorage (and localStorage for compatibility)
+                    localStorage.setItem('token', token);
                     sessionStorage.setItem('token', token);
+                    console.log('Token stored in sessionStorage:', sessionStorage.getItem('token'));
                 }
 
+                // Update admin context
                 setAdmin(response.data.user);
+                
+                // Set the Authorization header for future requests
                 axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.accessToken}`;
                 
                 toast.success('Successfully signed in!');
@@ -109,7 +128,12 @@ export default function Home() {
             toast.error(errorMessage);
         } finally {
             setIsLoading(false);
+            setShowLoading(false);
         }
+    };
+
+    const handleResetPassword = () => {
+        router.push('/forgot-password');
     };
 
     return (
@@ -171,7 +195,7 @@ export default function Home() {
                             <Button
                                 variant="link"
                                 className="text-primary hover:text-primary/80"
-                                onClick={() => router.push('/forgot-password')}
+                                onClick={handleResetPassword}
                             >
                                 Forgot Password?
                             </Button>
