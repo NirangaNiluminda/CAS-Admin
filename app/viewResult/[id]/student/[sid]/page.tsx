@@ -146,34 +146,34 @@ export default function ViewResult() {
     }, {} as Record<string, number>);
   };
   return (
-    <div className="w-full h-full px-8 py-12 bg-white flex flex-col items-center">
+    <div className="w-full h-full px-8 py-12 bg-gradient-to-b from-green-50 to-white flex flex-col items-center">
       {loading ? (
         <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-pulse text-gray-500">Loading results...</div>
+          <div className="animate-pulse text-green-600">Loading results...</div>
         </div>
       ) : quizResults ? (
         <div className="min-h-screen p-8">
           <div className="max-w-6xl mx-auto">
             {/* Header Section */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div className="bg-white rounded-lg shadow-md border border-green-200 p-6 mb-8">
               <div className="flex items-center justify-between mb-6">
-                <h1 className="text-3xl font-bold text-gray-800">Quiz Results</h1>
-                <button onClick={handleGoBack} className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
+                <h1 className="text-3xl font-bold text-green-800">Quiz Results</h1>
+                <button onClick={handleGoBack} className="flex items-center gap-2 px-4 py-2 text-green-600 hover:bg-green-50 rounded-md transition-colors">
                   <ArrowLeft size={20} />
                   Back
                 </button>
-                <button onClick={() => router.push('/dashboard')} className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
+                <button onClick={() => router.push('/dashboard')} className="flex items-center gap-2 px-4 py-2 text-green-600 hover:bg-green-50 rounded-md transition-colors">
                   <TvMinimalIcon size={20} />
                   Dashboard
                 </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-blue-50 p-4 rounded-lg flex items-center gap-3">
-                  <Trophy className="text-blue-500" size={24} />
+                <div className="bg-green-50 p-4 rounded-lg flex items-center gap-3">
+                  <Trophy className="text-green-500" size={24} />
                   <div>
                     <p className="text-sm text-gray-600">Score</p>
-                    <p className="text-2xl font-bold text-blue-600">
+                    <p className="text-2xl font-bold text-green-600">
                       {(quizResults.score / mcqData.length * 100).toFixed(0)}%
                     </p>
                   </div>
@@ -189,14 +189,14 @@ export default function ViewResult() {
                   </div>
                 </div>
 
-                <div className="bg-purple-50 p-4 rounded-lg flex items-center gap-3">
-                  <CheckCircle2 className="text-purple-500" size={24} />
+                <div className="bg-green-50 p-4 rounded-lg flex items-center gap-3">
+                  <CheckCircle2 className="text-green-500" size={24} />
                   <div>
                     <p className="text-sm text-gray-600">Questions</p>
-                    <p className="text-2xl font-bold text-purple-600">{mcqData.length}</p>
+                    <p className="text-2xl font-bold text-green-600">{mcqData.length}</p>
                   </div>
                 </div>
-                <div className="bg-red-50 p-4 rounded-lg flex items-center gap-3">
+                <div className="bg-red-50 p-4 rounded-lg flex items-center gap-3 border border-red-100">
                   <AlertTriangle className="text-red-500" size={24} />
                   <div>
                     <p className="text-sm text-gray-600">Violations</p>
@@ -207,15 +207,15 @@ export default function ViewResult() {
             </div>
             {/* Violations Section */}
             {violations.length > 0 && (
-              <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Violation Details</h2>
+              <div className="bg-white rounded-lg shadow-md border border-green-200 p-6 mb-8">
+                <h2 className="text-xl font-bold text-green-800 mb-4">Violation Details</h2>
 
                 {/* Violation Types Summary */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {Object.entries(groupViolationsByType(violations))
                     .slice(0, showAllViolations ? undefined : INITIAL_DISPLAY_COUNT)
                     .map(([type, count]) => (
-                      <div key={type} className="bg-gray-50 p-4 rounded-lg">
+                      <div key={type} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                         <div className="flex items-center justify-between">
                           <span className="text-gray-700 font-medium">{type}</span>
                           <span className="bg-red-100 text-red-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
@@ -230,7 +230,7 @@ export default function ViewResult() {
                 {Object.keys(groupViolationsByType(violations)).length > INITIAL_DISPLAY_COUNT && (
                   <button
                     onClick={() => setShowAllViolations(!showAllViolations)}
-                    className="mt-4 text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2"
+                    className="mt-4 text-green-600 hover:text-green-800 font-medium flex items-center gap-2"
                   >
                     {showAllViolations ? (
                       <>
@@ -248,10 +248,10 @@ export default function ViewResult() {
                 {/* Detailed Timeline */}
                 <div className="mt-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">Violation Timeline</h3>
+                    <h3 className="text-lg font-semibold text-green-700">Violation Timeline</h3>
                     <button
                       onClick={() => setShowAllTimeline(!showAllTimeline)}
-                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                      className="text-sm text-green-600 hover:text-green-800 font-medium"
                     >
                       {showAllTimeline ? 'Show Recent Only' : 'Show All'}
                     </button>
@@ -259,7 +259,7 @@ export default function ViewResult() {
 
                   <div className="space-y-4">
                     {/* Timeline Summary Card */}
-                    <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                    <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200">
                       <div className="flex justify-between items-center">
                         <span className="text-gray-700">Total Violations</span>
                         <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full font-medium">
@@ -278,7 +278,7 @@ export default function ViewResult() {
                         .map((violation, index) => (
                           <div
                             key={violation._id}
-                            className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                            className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200"
                           >
                             <div className="min-w-[100px] text-sm text-gray-500">
                               {new Date(violation.violation.timestamp).toLocaleTimeString()}
@@ -307,7 +307,7 @@ export default function ViewResult() {
                     {violations.length > INITIAL_DISPLAY_COUNT && (
                       <button
                         onClick={() => setShowAllTimeline(!showAllTimeline)}
-                        className="w-full mt-4 py-2 text-blue-600 hover:text-blue-800 font-medium flex items-center justify-center gap-2 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                        className="w-full mt-4 py-2 text-green-600 hover:text-green-800 font-medium flex items-center justify-center gap-2 border border-green-200 rounded-lg hover:bg-green-50 transition-colors"
                       >
                         {showAllTimeline ? (
                           <>
@@ -325,25 +325,25 @@ export default function ViewResult() {
               </div>
             )}
             {/* Results Table */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="bg-white rounded-lg shadow-md border border-green-200 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-green-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider">
                         Question
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider">
                         Selected Answer
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider">
                         Status
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {mcqData.map((answer, index) => (
-                      <tr key={answer._id} className="hover:bg-gray-50 transition-colors">
+                      <tr key={answer._id} className="hover:bg-green-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {answer.questionText}
                         </td>
@@ -372,7 +372,7 @@ export default function ViewResult() {
           </div>
         </div>
       ) : (
-        <p>No results found.</p>
+        <p className="text-green-700">No results found.</p>
       )}
     </div>
   );

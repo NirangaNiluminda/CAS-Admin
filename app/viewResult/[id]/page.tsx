@@ -63,13 +63,13 @@ const StatsCard = ({ icon: Icon, label, value, bgColor }: {
   value: string | number;
   bgColor: string;
 }) => (
-  <div className={`${bgColor} p-4 rounded-lg flex items-center gap-3`}>
+  <div className={`${bgColor} p-4 rounded-lg flex items-center gap-3 border border-green-200`}>
     <div className="p-2 bg-white/90 rounded-lg">
-      <Icon className="w-5 h-5 text-blue-600" />
+      <Icon className="w-5 h-5 text-green-600" />
     </div>
     <div>
       <p className="text-sm text-gray-600">{label}</p>
-      <p className="text-xl font-bold text-blue-700">{value}</p>
+      <p className="text-xl font-bold text-green-700">{value}</p>
     </div>
   </div>
 );
@@ -83,23 +83,23 @@ const SortIcon = ({ column, sortConfig }: {
 }) => {
   if (sortConfig.key !== column) return null;
   return sortConfig.direction === 'asc' ? (
-    <SortAsc className="ml-1 w-4 h-4 text-blue-600" />
+    <SortAsc className="ml-1 w-4 h-4 text-green-600" />
   ) : (
-    <SortDesc className="ml-1 w-4 h-4 text-blue-600" />
+    <SortDesc className="ml-1 w-4 h-4 text-green-600" />
   );
 };
 
 // Helper functions for score colors
 function getScoreColor(score: number): string {
   if (score >= 80) return 'bg-green-500';
-  if (score >= 60) return 'bg-blue-500';
+  if (score >= 60) return 'bg-green-400';
   if (score >= 40) return 'bg-yellow-500';
   return 'bg-red-500';
 }
 
 function getScoreTextColor(score: number): string {
   if (score >= 80) return 'text-green-700';
-  if (score >= 60) return 'text-blue-700';
+  if (score >= 60) return 'text-green-600';
   if (score >= 40) return 'text-yellow-700';
   return 'text-red-700';
 }
@@ -238,20 +238,20 @@ export default function ViewResult() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
-          <Card className="backdrop-blur-sm bg-white/90">
+          <Card className="backdrop-blur-sm bg-white/90 border border-green-200 shadow-lg">
             <CardHeader>
-              <div className="animate-pulse h-8 w-48 bg-blue-200 rounded mb-4" />
+              <div className="animate-pulse h-8 w-48 bg-green-200 rounded mb-4" />
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="animate-pulse flex space-x-4">
-                    <div className="h-4 bg-blue-200 rounded w-1/4" />
-                    <div className="h-4 bg-blue-200 rounded w-1/4" />
-                    <div className="h-4 bg-blue-200 rounded w-1/4" />
-                    <div className="h-4 bg-blue-200 rounded w-1/4" />
+                    <div className="h-4 bg-green-200 rounded w-1/4" />
+                    <div className="h-4 bg-green-200 rounded w-1/4" />
+                    <div className="h-4 bg-green-200 rounded w-1/4" />
+                    <div className="h-4 bg-green-200 rounded w-1/4" />
                   </div>
                 ))}
               </div>
@@ -264,12 +264,12 @@ export default function ViewResult() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
-          <Card className="backdrop-blur-sm bg-white/90 p-8 text-center">
+          <Card className="backdrop-blur-sm bg-white/90 p-8 text-center border border-green-200 shadow-lg">
             <CardTitle className="text-red-600 mb-4">Error Loading Data</CardTitle>
             <p className="text-gray-700">There was a problem fetching the quiz results. Please try again later.</p>
-            <Button className="mt-4" onClick={handleGoBack}>Go Back</Button>
+            <Button className="mt-4 bg-green-600 hover:bg-green-700 text-white" onClick={handleGoBack}>Go Back</Button>
           </Card>
         </div>
       </div>
@@ -277,55 +277,55 @@ export default function ViewResult() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
-        <Card className="backdrop-blur-sm bg-white/90 shadow-xl border border-indigo-100">
+        <Card className="backdrop-blur-sm bg-white/90 shadow-xl border border-green-200">
           <CardHeader className="space-y-4 pb-8">
             <div className="flex items-center justify-between">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleGoBack}
-                className="hover:bg-blue-50"
+                className="hover:bg-green-50"
               >
-                <ArrowLeft className="h-5 w-5 text-blue-600" />
+                <ArrowLeft className="h-5 w-5 text-green-600" />
               </Button>
-              <CardTitle className="text-3xl font-bold text-center mx-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">
+              <CardTitle className="text-3xl font-bold text-center mx-auto bg-gradient-to-r from-green-600 to-green-700 text-transparent bg-clip-text">
                 {quiz ? quiz.title : 'Loading...'}
               </CardTitle>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => router.push('/dashboard')}
-                className="hover:bg-blue-100"
+                className="hover:bg-green-50"
               >
-                <TvMinimalIcon className="h-5 w-5 text-blue-600" />
+                <TvMinimalIcon className="h-5 w-5 text-green-600" />
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
               <StatsCard
-              icon={Users}
-              label="Total Students"
-              value={quizResults.length}
-              bgColor="bg-blue-50"
+                icon={Users}
+                label="Total Students"
+                value={quizResults.length}
+                bgColor="bg-green-50"
               />
               <StatsCard
-              icon={Trophy}
-              label="Average Score"
-              value={`${averageScore}`}
-              bgColor="bg-green-50"
+                icon={Trophy}
+                label="Average Score"
+                value={`${averageScore}`}
+                bgColor="bg-green-50"
               />
               <StatsCard
-              icon={Clock}
-              label="Average Time"
-              value={`${averageTime} min`}
-              bgColor="bg-yellow-50"
+                icon={Clock}
+                label="Average Time"
+                value={`${averageTime} min`}
+                bgColor="bg-green-50"
               />
               <StatsCard
-              icon={BarChart3}
-              label="Pass Rate"
-              value={`${Math.round((quizResults.filter((r: QuizResult) => (r.score / totalQuestions) * 100 >= 40).length / quizResults.length) * 100)}%`}
-              bgColor="bg-purple-50"
+                icon={BarChart3}
+                label="Pass Rate"
+                value={`${Math.round((quizResults.filter((r: QuizResult) => (r.score / totalQuestions) * 100 >= 40).length / quizResults.length) * 100)}%`}
+                bgColor="bg-green-50"
               />
             </div>
             <div className="flex items-center justify-between mt-6 gap-4">
@@ -336,13 +336,13 @@ export default function ViewResult() {
                   placeholder="Search students..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 bg-white border-indigo-100 focus:border-blue-300"
+                  className="pl-9 bg-white border-green-200 focus:border-green-300"
                 />
               </div>
               <Button
                 variant="outline"
                 onClick={handleDownloadExcel}
-                className="border-blue-200 hover:bg-blue-100 text-blue-700"
+                className="border-green-200 hover:bg-green-100 text-green-700"
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export Results
@@ -350,15 +350,15 @@ export default function ViewResult() {
             </div>
           </CardHeader>
 
-          <Separator className="bg-indigo-100" />
+          <Separator className="bg-green-100" />
 
           <CardContent className="p-8">
-            <ScrollArea className="h-[60vh] rounded-lg border border-indigo-100 bg-white">
+            <ScrollArea className="h-[60vh] rounded-lg border border-green-200 bg-white">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <TableRow className="bg-gradient-to-r from-green-50 to-green-100">
                     <TableHead
-                      className="font-semibold text-blue-700 cursor-pointer"
+                      className="font-semibold text-green-700 cursor-pointer"
                       onClick={() => handleSort('registrationNumber')}
                     >
                       <div className="flex items-center">
@@ -367,7 +367,7 @@ export default function ViewResult() {
                       </div>
                     </TableHead>
                     <TableHead
-                      className="font-semibold text-blue-700 cursor-pointer"
+                      className="font-semibold text-green-700 cursor-pointer"
                       onClick={() => handleSort('score')}
                     >
                       <div className="flex items-center">
@@ -376,7 +376,7 @@ export default function ViewResult() {
                       </div>
                     </TableHead>
                     <TableHead
-                      className="font-semibold text-blue-700 cursor-pointer"
+                      className="font-semibold text-green-700 cursor-pointer"
                       onClick={() => handleSort('timeTaken')}
                     >
                       <div className="flex items-center">
@@ -384,66 +384,66 @@ export default function ViewResult() {
                         <SortIcon column="timeTaken" sortConfig={sortConfig} />
                       </div>
                     </TableHead>
-                    <TableHead className="font-semibold text-blue-700 cursor-pointer">
+                    <TableHead className="font-semibold text-green-700 cursor-pointer">
                       <div className="flex items-center">
                         Violations
                         <SortIcon column="violationCount" sortConfig={sortConfig} />
                       </div>
                     </TableHead>
-                    <TableHead className="font-semibold text-blue-700 text-right">Actions</TableHead>
+                    <TableHead className="font-semibold text-green-700 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {filteredResults.map((result: QuizResult) => (
-                    <TableRow key={result._id} className="hover:bg-blue-50/50 transition-colors">
+                  {filteredResults.map((result: QuizResult) => (
+                    <TableRow key={result._id} className="hover:bg-green-50/50 transition-colors">
                       <TableCell className="font-medium text-gray-700">
-                      {result.registrationNumber}
+                        {result.registrationNumber}
                       </TableCell>
                       <TableCell>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium" style={{ color: getScoreTextColor(result.score) }}>
-                        {result.score}
-                        </span>
-                      </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-medium" style={{ color: getScoreTextColor(result.score) }}>
+                            {result.score}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-gray-600">
-                      {result.timeTaken.toFixed(1)} min
+                        {result.timeTaken.toFixed(1)} min
                       </TableCell>
                       <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2.5 py-0.5 rounded-full text-sm font-medium ${getViolationStyle(getViolationCount(result.userId))}`}>
-                        {getViolationCount(result.userId)}
-                        </span>
-                        {getViolationCount(result.userId) > 5 && (
-                        <AlertTriangle className="h-4 w-4 text-red-500" />
-                        )}
-                      </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2.5 py-0.5 rounded-full text-sm font-medium ${getViolationStyle(getViolationCount(result.userId))}`}>
+                            {getViolationCount(result.userId)}
+                          </span>
+                          {getViolationCount(result.userId) > 5 && (
+                            <AlertTriangle className="h-4 w-4 text-red-500" />
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => quiz && router.push(`/viewResult/${quiz._id}/student/${result.userId}`)}
-                        className="bg-blue-100 hover:bg-blue-200 text-blue-700"
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        View Details
-                      </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => quiz && router.push(`/viewResult/${quiz._id}/student/${result.userId}`)}
+                          className="bg-green-100 hover:bg-green-200 text-green-700"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View Details
+                        </Button>
                       </TableCell>
                     </TableRow>
-                    ))}
+                  ))}
                 </TableBody>
               </Table>
             </ScrollArea>
           </CardContent>
 
-          <Separator className="bg-indigo-100" />
+          <Separator className="bg-green-100" />
 
-          <CardFooter className="p-8 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50">
+          <CardFooter className="p-8 flex justify-between items-center bg-gradient-to-r from-green-50 to-green-100">
             <div className="text-sm text-gray-600">
-              Showing <span className="font-medium text-blue-600">{filteredResults.length}</span> results
+              Showing <span className="font-medium text-green-600">{filteredResults.length}</span> results
               {searchTerm && (
-                <> filtered from <span className="font-medium text-blue-600">{quizResults.length}</span> total results</>
+                <> filtered from <span className="font-medium text-green-600">{quizResults.length}</span> total results</>
               )}
             </div>
           </CardFooter>

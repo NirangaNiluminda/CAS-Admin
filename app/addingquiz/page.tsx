@@ -212,7 +212,7 @@ export default function QuizForm() {
             <input
               type="text"
               placeholder="Enter Question"
-              className="w-full p-4 bg-gray-100 rounded-lg"
+              className="w-full p-4 bg-gray-100 rounded-lg mt-4"
               value={q.questionText}
               onChange={(e) =>
                 setQuestions((prev) => {
@@ -224,7 +224,7 @@ export default function QuizForm() {
             />
             <div className="mt-4 space-y-2">
               {q.answers.map((answer, aIndex) => (
-                <div key={aIndex} className="flex items-center space-x-4">
+                <div key={aIndex} className="flex items-center space-x-4 flex-col md:flex-row">
                   <input
                     type="text"
                     placeholder={`Answer ${aIndex + 1}`}
@@ -253,7 +253,7 @@ export default function QuizForm() {
                 </div>
               ))}
             </div>
-            <Button color="danger" variant="ghost" onClick={() => deleteQuestion(qIndex)}>
+            <Button color="danger" className='mt-4' variant="ghost" onClick={() => deleteQuestion(qIndex)}>
               Delete Question
             </Button>
           </div>
