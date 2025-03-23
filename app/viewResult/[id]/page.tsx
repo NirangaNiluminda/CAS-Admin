@@ -11,7 +11,7 @@ import { Download, ArrowLeft, Eye, Search, SortAsc, SortDesc, AlertTriangle, TvM
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { Input } from '../../components/ui/input';
 import { Users, Trophy, Clock, BarChart3 } from 'lucide-react';
-
+import { Breadcrumbs } from '../../components/ui/Breadcrumbs';
 // Add SWR for data fetching and caching
 import useSWR from 'swr';
 
@@ -240,6 +240,7 @@ export default function ViewResult() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
+        <Breadcrumbs items={[{ label: 'Loading Results...' }]} />
           <Card className="backdrop-blur-sm bg-white/90 border border-green-200 shadow-lg">
             <CardHeader>
               <div className="animate-pulse h-8 w-48 bg-green-200 rounded mb-4" />
@@ -266,6 +267,7 @@ export default function ViewResult() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
+        <Breadcrumbs items={[{ label: 'Error' }]} />
           <Card className="backdrop-blur-sm bg-white/90 p-8 text-center border border-green-200 shadow-lg">
             <CardTitle className="text-red-600 mb-4">Error Loading Data</CardTitle>
             <p className="text-gray-700">There was a problem fetching the quiz results. Please try again later.</p>
@@ -279,6 +281,12 @@ export default function ViewResult() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
+      {quiz && (
+          <Breadcrumbs items={[
+            { label: quiz.title, href: '/viewquiz' },
+            { label: 'Results' }
+          ]} />
+        )}
         <Card className="backdrop-blur-sm bg-white/90 shadow-xl border border-green-200">
           <CardHeader className="space-y-4 pb-8">
             <div className="flex items-center justify-between">
@@ -423,7 +431,7 @@ export default function ViewResult() {
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => quiz && router.push(`/viewResult/${quiz._id}/student/${result.userId}`)}
+                          onClick={() => quiz && router.push(`/viewResult/${quiz._id}/student/${result.userId}?regNum=${result.registrationNumber}`)}
                           className="bg-green-100 hover:bg-green-200 text-green-700"
                         >
                           <Eye className="h-4 w-4 mr-1" />
