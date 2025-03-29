@@ -29,22 +29,23 @@ import { useRouter } from 'next/navigation';
 import { useAdmin } from '../context/AdminContext';
 import { useQuiz } from '../context/QuizContext';
 import { useEssay } from '../context/EssayContext';
-import { 
-    PlusCircle, 
-    Eye, 
-    Link2, 
-    Edit, 
-    Search, 
-    SortAsc, 
-    FileText, 
-    List, 
-    BookOpen, 
-    Calendar, 
-    Clock, 
-    User, 
+import {
+    PlusCircle,
+    Eye,
+    Link2,
+    Edit,
+    Search,
+    SortAsc,
+    FileText,
+    List,
+    BookOpen,
+    Calendar,
+    Clock,
+    User,
     UserCheck,
     Award,
-    BarChart3 
+    BarChart3,
+    Trash2
 } from 'lucide-react';
 import { toast } from "sonner";
 
@@ -99,17 +100,17 @@ export default function Page() {
                     if (data.success) {
                         const fetchedAssignments = assignmentType === 'quiz' ? data.assignments : data.essayAssignments;
                         setAssignments(fetchedAssignments);
-                        
+
                         // Calculate stats
-                        const totalQuestions = fetchedAssignments.reduce((acc, curr) => acc + curr.questions.length, 0);
-                        
+                        const totalQuestions = fetchedAssignments.reduce((acc: any, curr: { questions: string | any[]; }) => acc + curr.questions.length, 0);
+
                         // Count recent activity (assignments created in the last 30 days)
                         const thirtyDaysAgo = new Date();
                         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                        const recentActivity = fetchedAssignments.filter(a => 
+                        const recentActivity = fetchedAssignments.filter((a: { createdAt: string | number | Date; }) =>
                             a.createdAt && new Date(a.createdAt) > thirtyDaysAgo
                         ).length;
-                        
+
                         setStats({
                             totalAssignments: fetchedAssignments.length,
                             totalQuestions,
@@ -198,6 +199,165 @@ export default function Page() {
         return URL;
     };
 
+    const deleteAssignment = async (id: string) => {
+        try {
+            const apiUrl = typeof window !== 'undefined'
+                ? window.location.hostname === 'localhost'
+                    ? 'http://localhost:4000'
+                    : process.env.NEXT_PUBLIC_DEPLOYMENT_URL
+                : '';
+
+            // Correct the API endpoint to match the expected format
+            const response = await fetch(`${apiUrl}/api/v1/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            // Check if the response is OK
+            if (!response.ok) {
+                throw new Error(`Failed to delete assignment: ${response.statusText}`);
+            }
+
+            // Attempt to parse the response as JSON
+            let data;
+            try {
+                data = await response.json();
+            } catch (error) {
+                console.warn('Response body is empty or invalid JSON:', error);
+                data = { success: response.ok }; // Assume success if the response status is OK
+            }
+
+            if (data.success) {
+                toast.success('Assignment deleted successfully!');
+                setAssignments((prev) => prev.filter((assignment) => assignment._id !== id));
+            } else {
+                throw new Error(data.message || 'Failed to delete assignment');
+            }
+        } catch (error) {
+            console.error('Failed to delete assignment:', error);
+            toast.error('Failed to delete assignment. Please try again.');
+        }
+    };
+
+    const createAssignment = async (assignmentData: any, maxRetries = 3) => {
+        let retryCount = 0;
+        
+        while (retryCount < maxRetries) {
+            try {
+                // Determine API URL
+                const apiUrl = typeof window !== 'undefined'
+                    ? window.location.hostname === 'localhost'
+                        ? 'http://localhost:4000'
+                        : process.env.NEXT_PUBLIC_DEPLOYMENT_URL
+                    : '';
+                
+                // Log what we're sending and where
+                console.log("Creating assignment with data:", JSON.stringify(assignmentData, null, 2));
+                console.log("Sending to endpoint:", `${apiUrl}/api/v1/create-assignment`);
+                
+                // Simple fetch without timeout wrapper for testing
+                const response = await fetch(`${apiUrl}/api/v1/create-assignment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify(assignmentData),
+                    // Don't set a timeout here to see if that's the issue
+                });
+                
+                // If response is not OK, throw error
+                if (!response.ok) {
+                    throw new Error(`Server responded with status: ${response.status} - ${response.statusText}`);
+                }
+                
+                // Parse response data
+                let data;
+                try {
+                    data = await response.json();
+                } catch (parseError) {
+                    console.warn("Could not parse response as JSON:", parseError);
+                    
+                    // If we can't parse JSON but response was OK, assume success
+                    if (response.ok) {
+                        toast.success('Assignment created successfully!');
+                        router.push('/dashboard');
+                        return true;
+                    } else {
+                        throw new Error("Invalid response format from server");
+                    }
+                }
+                
+                // Handle successful response
+                if (data.success) {
+                    toast.success('Assignment created successfully!');
+                    router.push('/dashboard');
+                    return true;
+                } else {
+                    throw new Error(data.message || 'Failed to create assignment');
+                }
+            } catch (error) {
+                // Increment retry counter
+                retryCount++;
+                
+                console.error(`Attempt ${retryCount} failed:`, error);
+                
+                // If we've reached max retries, show error and exit
+                if (retryCount >= maxRetries) {
+                    toast.error('Failed to create assignment. Please try again.');
+                    console.error('Error creating assignment after all retries:', error);
+                    return false;
+                }
+                
+                // Wait before retrying (exponential backoff)
+                const backoffTime = 1000 * Math.pow(2, retryCount - 1);
+                console.log(`Retrying in ${backoffTime}ms...`);
+                await new Promise(resolve => setTimeout(resolve, backoffTime));
+                
+                toast.info(`Retrying submission (attempt ${retryCount + 1}/${maxRetries})...`);
+            }
+        }
+        
+        return false; // Should not reach here, but just in case
+    };
+    
+    // Utility function to add timeout to fetch
+    const fetchWithTimeout = (url: string | URL | Request, options: any, timeout = 30000) => { // Increased default timeout to 30 seconds
+        return new Promise((resolve, reject) => {
+            // Create an abort controller to handle timeouts
+            const controller = new AbortController();
+            const signal = controller.signal;
+            
+            // Add the signal to options
+            const enhancedOptions = {
+                ...options,
+                signal,
+            };
+            
+            // Set up the timeout
+            const timer = setTimeout(() => {
+                controller.abort();
+                reject(new Error('Request timed out'));
+            }, timeout);
+            
+            fetch(url, enhancedOptions)
+                .then((response) => {
+                    clearTimeout(timer);
+                    resolve(response);
+                })
+                .catch((error) => {
+                    clearTimeout(timer);
+                    if (error.name === 'AbortError') {
+                        reject(new Error('Request timed out'));
+                    } else {
+                        reject(error);
+                    }
+                });
+        });
+    };
+
     const filteredAssignments = Array.isArray(assignments)
         ? assignments
             .filter(assignment =>
@@ -222,7 +382,7 @@ export default function Page() {
             <div className="fixed top-20 left-20 w-64 h-64 bg-green-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
             <div className="fixed top-40 right-20 w-72 h-72 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
             <div className="fixed bottom-20 left-1/4 w-56 h-56 bg-green-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
-            
+
             <div className="max-w-7xl mx-auto relative z-10">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -241,8 +401,8 @@ export default function Page() {
                                 <p className="text-gray-600">Manage your assignments and quizzes</p>
                             </div>
                         </div>
-                        
-                        <Button 
+
+                        <Button
                             onClick={() => router.push('/addingquiz')}
                             className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl px-6 py-2 shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
                         >
@@ -253,7 +413,7 @@ export default function Page() {
 
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <motion.div 
+                        <motion.div
                             whileHover={{ y: -5, boxShadow: "0 10px 30px -15px rgba(0, 0, 0, 0.2)" }}
                             transition={{ duration: 0.2 }}
                             className="bg-white rounded-2xl p-6 shadow-md border border-green-100"
@@ -268,8 +428,8 @@ export default function Page() {
                                 </div>
                             </div>
                         </motion.div>
-                        
-                        <motion.div 
+
+                        <motion.div
                             whileHover={{ y: -5, boxShadow: "0 10px 30px -15px rgba(0, 0, 0, 0.2)" }}
                             transition={{ duration: 0.2 }}
                             className="bg-white rounded-2xl p-6 shadow-md border border-green-100"
@@ -284,8 +444,8 @@ export default function Page() {
                                 </div>
                             </div>
                         </motion.div>
-                        
-                        <motion.div 
+
+                        <motion.div
                             whileHover={{ y: -5, boxShadow: "0 10px 30px -15px rgba(0, 0, 0, 0.2)" }}
                             transition={{ duration: 0.2 }}
                             className="bg-white rounded-2xl p-6 shadow-md border border-green-100"
@@ -319,17 +479,17 @@ export default function Page() {
                                         <span>Verified Educator</span>
                                     </div>
                                 </div>
-                                
+
                                 <div className="w-full md:w-2/3 p-8">
                                     <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                                         <Award className="h-5 w-5 mr-2 text-green-600" />
                                         Educator Dashboard
                                     </h3>
                                     <p className="text-gray-600 mb-6">
-                                        Create, manage, and distribute assignments to your students. 
+                                        Create, manage, and distribute assignments to your students.
                                         Track progress and provide timely feedback.
                                     </p>
-                                    
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="flex items-center">
                                             <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3">
@@ -340,7 +500,7 @@ export default function Page() {
                                                 <p className="text-sm text-gray-500">MCQ, Essays, and more</p>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="flex items-center">
                                             <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3">
                                                 <Clock className="h-5 w-5 text-green-600" />
@@ -350,7 +510,7 @@ export default function Page() {
                                                 <p className="text-sm text-gray-500">Set custom time limits</p>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="flex items-center">
                                             <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3">
                                                 <Link2 className="h-5 w-5 text-green-600" />
@@ -360,7 +520,7 @@ export default function Page() {
                                                 <p className="text-sm text-gray-500">Share via link or email</p>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="flex items-center">
                                             <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3">
                                                 <BarChart3 className="h-5 w-5 text-green-600" />
@@ -382,7 +542,7 @@ export default function Page() {
                             <Search className="h-5 w-5 mr-2 text-green-600" />
                             Find Assignments
                         </h3>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -441,6 +601,165 @@ export default function Page() {
                         </div>
                     </div>
 
+                    {/* Recently Created Assignments */}
+                    <div className="mb-8">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+                                <Clock className="h-5 w-5 mr-2 text-green-600" />
+                                Recently Created Assignments
+                            </h3>
+                            {filteredAssignments.length > 3 && (
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => document.getElementById('allAssignmentsTable').scrollIntoView({ behavior: 'smooth' })}
+                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                >
+                                    View All
+                                </Button>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {isLoading ? (
+                                Array(3).fill(0).map((_, index) => (
+                                    <div key={`recent-skeleton-${index}`} className="bg-white rounded-xl p-4 shadow-md border border-green-100 h-32 animate-pulse">
+                                        <div className="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
+                                        <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+                                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                                    </div>
+                                ))
+                            ) : filteredAssignments.length > 0 ? (
+                                filteredAssignments
+                                    .sort((a, b) => {
+                                        // Sort by creation date (newest first)
+                                        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                                        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                                        return dateB - dateA;
+                                    })
+                                    .slice(0, 3) // Changed from 5 to 3
+                                    .map((assignment, index) => (
+                                        <motion.div
+                                            key={`recent-${assignment._id}`}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                                            whileHover={{ y: -5, boxShadow: "0 10px 30px -15px rgba(0, 0, 0, 0.2)" }}
+                                            className="bg-white rounded-xl p-5 shadow-md border border-green-100 relative overflow-hidden group"
+                                        >
+                                            <div className="absolute top-0 right-0 w-20 h-20 bg-green-100 rounded-bl-3xl -mt-6 -mr-6 flex items-end justify-start p-2 transform rotate-12 group-hover:bg-green-200 transition-colors">
+                                                {assignmentType === 'quiz' ? (
+                                                    <FileText className="h-5 w-5 text-green-600 transform -rotate-12" />
+                                                ) : (
+                                                    <BookOpen className="h-5 w-5 text-green-600 transform -rotate-12" />
+                                                )}
+                                            </div>
+
+                                            <h4 className="font-semibold text-gray-800 mb-2 pr-6 truncate">{assignment.title}</h4>
+
+                                            <div className="flex items-center text-sm text-gray-500 mb-3">
+                                                <List className="h-4 w-4 mr-1" />
+                                                <span>{assignment.questions.length} questions</span>
+                                            </div>
+
+                                            {assignment.createdAt && (
+                                                <div className="text-xs text-gray-400 mb-3">
+                                                    Created {new Date(assignment.createdAt).toLocaleDateString()}
+                                                </div>
+                                            )}
+
+                                            <div className="flex items-center space-x-2 mt-auto">
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => fetchQuiz(assignment._id, assignmentType)}
+                                                                className="h-8 w-8 p-0 rounded-full text-gray-500 hover:text-green-600 hover:bg-green-50"
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>View Assignment</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => getQuizLink(assignment._id)}
+                                                                className="h-8 w-8 p-0 rounded-full text-gray-500 hover:text-green-600 hover:bg-green-50"
+                                                            >
+                                                                <Link2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Share Assignment</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => editQuiz(assignment._id)}
+                                                                className="h-8 w-8 p-0 rounded-full text-gray-500 hover:text-green-600 hover:bg-green-50"
+                                                            >
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Edit Assignment</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => deleteAssignment(assignment._id)}
+                                                                className="h-8 w-8 p-0 rounded-full text-gray-500 hover:text-red-600 hover:bg-red-50"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Delete Assignment</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            </div>
+                                        </motion.div>
+                                    ))
+                            ) : (
+                                <div className="col-span-3 bg-white rounded-xl p-6 shadow-md border border-green-100 text-center">
+                                    <FileText className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                                    <p className="text-gray-500">No recent assignments found.</p>
+                                    <p className="text-gray-400 text-sm mt-1 mb-3">Create your first assignment to see it here.</p>
+                                    <Button
+                                        onClick={() => router.push('/addingquiz')}
+                                        className="bg-green-600 hover:bg-green-700 text-white mx-auto"
+                                        size="sm"
+                                    >
+                                        <PlusCircle className="h-4 w-4 mr-2" />
+                                        Create Assignment
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     {/* Table Section */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -454,7 +773,7 @@ export default function Page() {
                                 Your Assignments
                             </h3>
                         </div>
-                        
+
                         <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
@@ -527,6 +846,16 @@ export default function Page() {
                                                             <Edit className="h-4 w-4" />
                                                             <span>Edit</span>
                                                         </Button>
+
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => deleteAssignment(assignment._id)}
+                                                            className="flex items-center gap-1 text-gray-700 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300 rounded-lg transition-colors"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                            <span>Delete</span>
+                                                        </Button>
                                                     </div>
                                                 </TableCell>
                                             </motion.tr>
@@ -538,7 +867,7 @@ export default function Page() {
                                                     <FileText className="h-12 w-12 text-gray-300 mb-3" />
                                                     <p className="text-lg font-medium text-gray-500 mb-1">No assignments found</p>
                                                     <p className="text-gray-400 mb-4">Create your first assignment to get started</p>
-                                                    <Button 
+                                                    <Button
                                                         onClick={() => router.push('/addingquiz')}
                                                         className="bg-green-600 hover:bg-green-700 text-white"
                                                     >

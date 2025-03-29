@@ -1,19 +1,34 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@nextui-org/button';
-import { Checkbox } from '@nextui-org/checkbox';
-// Changed the Alert import to a more standard package
 import { Alert } from '@nextui-org/alert'; 
 import { useAdmin } from '../context/AdminContext';
 import axios from 'axios';
-import { Breadcrumbs } from '../components/ui/Breadcrumbs';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  FileText, 
+  Clock, 
+  Calendar, 
+  Key, 
+  Save, 
+  X, 
+  PlusCircle, 
+  Trash2, 
+  CheckCircle, 
+  ListChecks,
+  Edit3,
+  HelpCircle,
+  ChevronDown,
+  RefreshCw
+} from 'lucide-react';
+
 export default function QuizForm() {
   const { admin } = useAdmin();
   const [type, setType] = useState('mcq');
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('Test your basic skills');
+  const [description, setDescription] = useState('Test your knowledge');
   const [questions, setQuestions] = useState([
     { questionText: '', answers: ['', '', '', ''], correct: [false, false, false, false] },
   ]);
@@ -22,356 +37,745 @@ export default function QuizForm() {
   const [password, setPassword] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
   const [showAlert, setShowAlert] = useState(false);
-  // Added missing date fields
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [mainStartTime, setMainStartTime] = useState('');
   const [mainEndTime, setMainEndTime] = useState('');
   const [startDate, setStartDate] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
+  const [maxRetries] = useState(3); // Set maximum retries
   const router = useRouter();
 
-  const addQuestion = () => {
-    setQuestions([
-      ...questions,
-      { questionText: '', answers: ['', '', '', ''], correct: [false, false, false, false] },
-    ]);
+  // Set default dates when component mounts
+  useEffect(() => {
+    if (!startDate || !mainStartTime || !mainEndTime) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      if (!startDate) {
+        const startDate = new Date(tomorrow);
+        startDate.setHours(0, 0, 0, 0);
+        setStartDate(startDate.toISOString().slice(0, 16));
+      }
+      
+      if (!mainStartTime) {
+        const startTime = new Date(tomorrow);
+        startTime.setHours(9, 0, 0, 0);
+        setMainStartTime(startTime.toISOString().slice(0, 16));
+      }
+      
+      if (!mainEndTime) {
+        const endTime = new Date(tomorrow);
+        endTime.setHours(17, 0, 0, 0);
+        setMainEndTime(endTime.toISOString().slice(0, 16));
+      }
+    }
+  }, []);
+
+  // Add a question to the list
+  const addQuestion = (afterIndex = null) => {
+    if (afterIndex === null) {
+      // Add to the end (original behavior)
+      setQuestions([
+        ...questions,
+        { questionText: '', answers: ['', '', '', ''], correct: [false, false, false, false] },
+      ]);
+    } else {
+      // Insert after the specified index
+      const newQuestions = [...questions];
+      newQuestions.splice(afterIndex + 1, 0, { 
+        questionText: '', 
+        answers: ['', '', '', ''], 
+        correct: [false, false, false, false] 
+      });
+      setQuestions(newQuestions);
+    }
   };
 
   const deleteQuestion = (index) => {
+    if (questions.length === 1) {
+      setAlertMessage('You need at least one question');
+      setShowAlert(true);
+      setTimeout(() => {
+        setShowAlert(false);
+        setAlertMessage('');
+      }, 2000);
+      return;
+    }
+    
     setQuestions((prev) => prev.filter((_, qIndex) => qIndex !== index));
     setAlertMessage(`Deleted question ${index + 1}`);
     setShowAlert(true);
     setTimeout(() => {
       setShowAlert(false);
       setAlertMessage('');
-    }, 1000);
+    }, 1500);
   };
 
   const handleCancel = () => {
     router.push('/dashboard');
   };
 
-  const handleSubmit = async () => {
-    const validateForm = () => {
-      if (!title.trim()) {
-        alert('Quiz title is required.');
-        return false;
-      }
-      if (type === 'mcq') {
-        if (questions.some((q) => !q.questionText.trim())) {
-          alert('Each question must have text.');
-          return false;
-        }
-        if (questions.some((q) => q.answers.some((answer) => !answer.trim()))) {
-          alert('All answers must have text.');
-          return false;
-        }
-        if (questions.some((q) => !q.correct.includes(true))) {
-          alert('Each question must have at least one correct answer.');
-          return false;
-        }
-      } else if (type === 'essay') {
-        if (!essayQuestion.questionText.trim() || !essayQuestion.answer.trim()) {
-          alert('Essay question and answer are required.');
-          return false;
-        }
-      }
-      if (!password.trim()) {
-        alert('Password is required.');
-        return false;
-      }
-      // Added validation for date fields
-      if (!mainStartTime || !mainEndTime || !startDate) {
-        alert('All date fields are required.');
-        return false;
-      }
-      return true;
-    };
-
-    if (!validateForm()) return;
-
-    // Set default times if not provided
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+  const validateForm = () => {
+    if (!title.trim()) {
+      setAlertMessage('Assignment title is required.');
+      setShowAlert(true);
+      return false;
+    }
     
-    // Format dates properly
-    const formattedStartDate = startDate || tomorrow.toISOString().split('T')[0] + 'T00:00:00Z';
-    const formattedMainStartTime = mainStartTime || tomorrow.toISOString().split('T')[0] + 'T09:00:00Z';
-    const formattedMainEndTime = mainEndTime || tomorrow.toISOString().split('T')[0] + 'T17:00:00Z';
+    if (type === 'mcq') {
+      if (questions.some((q) => !q.questionText.trim())) {
+        setAlertMessage('Each question must have text.');
+        setShowAlert(true);
+        return false;
+      }
+      if (questions.some((q) => q.answers.some((answer) => !answer.trim()))) {
+        setAlertMessage('All answers must have text.');
+        setShowAlert(true);
+        return false;
+      }
+      
+      // Fix for the correct answer validation
+      const invalidQuestions = questions.filter(q => !q.correct.includes(true));
+      if (invalidQuestions.length > 0) {
+        setAlertMessage('Each question must have at least one correct answer.');
+        setShowAlert(true);
+        return false;
+      }
+    } else if (type === 'essay') {
+      if (!essayQuestion.questionText.trim() || !essayQuestion.answer.trim()) {
+        setAlertMessage('Essay question and answer are required.');
+        setShowAlert(true);
+        return false;
+      }
+    }
+    
+    if (!password.trim()) {
+      setAlertMessage('Password is required.');
+      setShowAlert(true);
+      return false;
+    }
+    
+    return true;
+  };
 
-    const quizData = {
-      type,
-      title,
-      description,
-      timeLimit: parseInt(timeLimit, 10),
-      questions:
-        type === 'mcq'
-          ? questions.map((q) => ({
-              questionText: q.questionText,
-              options: q.answers.map((answer, idx) => ({
-                text: answer,
-                isCorrect: q.correct[idx],
-              })),
-            }))
-          : [{ 
-              questionText: essayQuestion.questionText, 
-              answer: essayQuestion.answer 
-            }],
-      teacherId: admin?._id,
-      password,
-      // Added required date fields
-      mainStartTime: formattedMainStartTime,
-      mainEndTime: formattedMainEndTime,
-      startDate: formattedStartDate,
-      // Added default guidelines
-      guidelines: ["Guideline 1", "Guideline 2", "Guideline 3", "Guideline 4"]
-    };
+  // Function to handle API request with retry logic
+  const submitWithRetry = async (endpoint, data, token) => {
+    let attempt = 0;
+    let lastError;
+
+    while (attempt <= maxRetries) {
+      try {
+        if (attempt > 0) {
+          setRetryCount(attempt);
+          setAlertMessage(`Retrying... Attempt ${attempt} of ${maxRetries}`);
+          // No need to setShowAlert(true) as it should already be showing
+        }
+
+        // Increase timeout for each retry
+        const timeout = 20000 + (attempt * 10000); // 20s, 30s, 40s...
+        
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timed out')), timeout)
+        );
+        
+        // Try the request with the current timeout
+        const response = await Promise.race([
+          axios.post(endpoint, data, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }),
+          timeoutPromise
+        ]);
+        
+        // If we get here, the request succeeded
+        return response;
+      } catch (error) {
+        lastError = error;
+        console.error(`Attempt ${attempt + 1} failed:`, error);
+        
+        // If it's not a timeout, or we're on our last retry, break out of the loop
+        if (error.message !== 'Request timed out' || attempt === maxRetries) {
+          break;
+        }
+        
+        // Wait before retrying (backoff strategy)
+        await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
+        attempt++;
+      }
+    }
+    
+    // If we get here, all attempts failed
+    throw lastError;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+    
+    setIsSubmitting(true);
+    setRetryCount(0);
+    setAlertMessage('Processing your request...');
+    setShowAlert(true);
 
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        alert('No authentication token found. Please login.');
+        setAlertMessage('No authentication token found. Please login.');
+        setShowAlert(true);
         router.push('/login');
         return;
       }
 
-      console.log("Submitting quiz data:", quizData);
-
+      // Determine API URL
       let apiUrl;
       if (typeof window !== 'undefined') {
         if (window.location.hostname === 'localhost') {
           apiUrl = 'http://localhost:4000';
         } else {
           apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
-          console.log('Deployment URL:', apiUrl);
         }
       }
-
-      // Simplified API endpoint selection
-      const endpoint = type === 'mcq' 
-        ? `${apiUrl}/api/v1/create-assignment` 
-        : `${apiUrl}/api/v1/essay/create`;
+      
+      // Function to ensure dates are properly formatted
+      const formatDate = (dateString) => {
+        if (!dateString) {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          return tomorrow.toISOString();
+        }
         
-      const response = await axios.post(endpoint, quizData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      console.log("API Response:", response.data);
-      
-      setAlertMessage('Quiz created successfully!');
-      setShowAlert(true);
-      setTimeout(() => {
-        setShowAlert(false);
-        setAlertMessage('');
-        router.push('/dashboard');
-      }, 1000);
+        // Handle datetime-local input format
+        if (!dateString.includes('Z')) {
+          return new Date(dateString).toISOString();
+        }
+        
+        return dateString;
+      };
+
+      // Create a minimal test quiz with just enough data for testing
+      const simplifiedData = {
+        title,
+        description,
+        timeLimit: parseInt(timeLimit, 10),
+        password,
+        teacherId: admin?._id,
+        mainStartTime: formatDate(mainStartTime),
+        mainEndTime: formatDate(mainEndTime),
+        startDate: formatDate(startDate)
+      };
+
+      if (type === 'mcq') {
+        // For MCQ quizzes
+        simplifiedData.questions = questions.map(q => ({
+          questionText: q.questionText,
+          options: q.answers.map((answer, idx) => ({
+            text: answer,
+            isCorrect: q.correct[idx]
+          }))
+        }));
+        
+        console.log("Sending MCQ data:", JSON.stringify(simplifiedData, null, 2));
+        
+        // Choose endpoint and submit with retry
+        const endpoint = `${apiUrl}/api/v1/create-assignment`;
+        console.log("Sending to endpoint:", endpoint);
+        
+        const response = await submitWithRetry(endpoint, simplifiedData, token);
+        
+        console.log("Full API Response:", response);
+        
+        if (response && response.data) {
+          console.log("Response data:", response.data);
+          
+          setAlertMessage('Quiz created successfully!');
+          setShowAlert(true);
+          setTimeout(() => {
+            setShowAlert(false);
+            router.push('/dashboard');
+          }, 1500);
+        }
+      } else {
+        // For Essay
+        simplifiedData.questions = [{ 
+          questionText: essayQuestion.questionText, 
+          answer: essayQuestion.answer 
+        }];
+        
+        console.log("Sending Essay data:", JSON.stringify(simplifiedData, null, 2));
+        
+        // Choose endpoint and submit with retry
+        const endpoint = `${apiUrl}/api/v1/essay/create`;
+        console.log("Sending to endpoint:", endpoint);
+        
+        const response = await submitWithRetry(endpoint, simplifiedData, token);
+        
+        console.log("Full API Response:", response);
+        
+        if (response && response.data) {
+          console.log("Response data:", response.data);
+          
+          setAlertMessage('Essay created successfully!');
+          setShowAlert(true);
+          setTimeout(() => {
+            setShowAlert(false);
+            router.push('/dashboard');
+          }, 1500);
+        }
+      }
     } catch (error) {
       console.error('Error creating assignment:', error);
-      setAlertMessage(`Error: ${error.response?.data?.message || 'Something went wrong'}`);
+      
+      if (error.message === 'Request timed out') {
+        setAlertMessage(`Request timed out after ${maxRetries} attempts. The server is not responding.`);
+      } else if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.error('Server error details:', error.response.data);
+        console.error('Status code:', error.response.status);
+        setAlertMessage(`Error (${error.response.status}): ${error.response.data?.message || 'Server returned an error'}`);
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error('No response received:', error.request);
+        setAlertMessage('No response received from server. Check your network connection.');
+      } else {
+        // Something happened in setting up the request
+        console.error('Error message:', error.message);
+        setAlertMessage(`Error: ${error.message}`);
+      }
+      
       setShowAlert(true);
-      setTimeout(() => {
-        setShowAlert(false);
-      }, 3000);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
 
-    <div className="w-full max-w-5xl mx-auto p-8 bg-white rounded-lg shadow-md">
-      <Breadcrumbs
-        items={[
-          { label: 'Create Assignment' }
-        ]}
-      />
-      <div className="flex justify-between items-center">
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white p-4 md:p-8">
+      {/* Decorative elements */}
+      <div className="fixed top-20 right-40 w-64 h-64 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+      <div className="fixed bottom-40 left-20 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
 
-        <h1 className="text-3xl font-bold mb-6">Create an Assignment</h1>
-        <div className="flex items-center gap-4">
-          <label className="block text-sm font-semibold">Type</label>
-          <select
-            name="type"
-            id="type"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="p-2 bg-gray-100 rounded-lg"
-          >
-            <option value="mcq">MCQ</option>
-            <option value="essay">Essay</option>
-          </select>
-        </div>
-      </div>
-
-      {showAlert && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <p className={`text-lg ${alertMessage.includes('Error') ? 'text-red-500' : 'text-green-500'}`}>
-              {alertMessage}
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-4">
-        <input
-          type="text"
-          placeholder="Assignment Title"
-          className="w-full p-4 bg-gray-100 rounded-lg"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-        <textarea
-          placeholder="Assignment Description"
-          className="w-full p-4 bg-gray-100 rounded-lg"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </div>
       
-      <div className="mt-4">
-        <label className="block text-sm font-semibold mb-2">Time Limit (Minutes):</label>
-        <input
-          type="number"
-          value={timeLimit}
-          onChange={(e) => setTimeLimit(Number(e.target.value))}
-          className="p-2 bg-gray-100 rounded-lg"
-          min="1"
-        />
-      </div>
-
-      {/* Added date fields */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-        <div>
-          <label className="block text-sm font-semibold mb-2">Start Date:</label>
-          <input
-            type="datetime-local"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="p-2 bg-gray-100 rounded-lg w-full"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold mb-2">Main Start Time:</label>
-          <input
-            type="datetime-local"
-            value={mainStartTime}
-            onChange={(e) => setMainStartTime(e.target.value)}
-            className="p-2 bg-gray-100 rounded-lg w-full"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold mb-2">Main End Time:</label>
-          <input
-            type="datetime-local"
-            value={mainEndTime}
-            onChange={(e) => setMainEndTime(e.target.value)}
-            className="p-2 bg-gray-100 rounded-lg w-full"
-          />
-        </div>
-      </div>
-
-      {type === 'mcq' &&
-        questions.map((q, qIndex) => (
-          <div key={qIndex} className="mt-8">
-            <h2 className="text-xl font-semibold">Question {qIndex + 1}</h2>
-            <input
-              type="text"
-              placeholder="Enter Question"
-              className="w-full p-4 bg-gray-100 rounded-lg mt-4"
-              value={q.questionText}
-              onChange={(e) =>
-                setQuestions((prev) => {
-                  const updated = [...prev];
-                  updated[qIndex].questionText = e.target.value;
-                  return updated;
-                })
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden relative z-10"
+      >
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-500 to-green-500 p-6 text-white">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl md:text-3xl font-bold flex items-center">
+              {type === 'mcq' ? 
+                <ListChecks className="mr-3 h-6 w-6" /> : 
+                <Edit3 className="mr-3 h-6 w-6" />
               }
-            />
-            <div className="mt-4 space-y-2">
-              {q.answers.map((answer, aIndex) => (
-                <div key={aIndex} className="flex items-center space-x-4 flex-col md:flex-row">
-                  <input
-                    type="text"
-                    placeholder={`Answer ${aIndex + 1}`}
-                    className="flex-1 p-4 bg-gray-100 rounded-lg"
-                    value={answer}
-                    onChange={(e) =>
-                      setQuestions((prev) => {
-                        const updated = [...prev];
-                        updated[qIndex].answers[aIndex] = e.target.value;
-                        return updated;
-                      })
-                    }
-                  />
-                  <Checkbox
-                    isSelected={q.correct[aIndex]}
-                    onChange={(e) =>
-                      setQuestions((prev) => {
-                        const updated = [...prev];
-                        updated[qIndex].correct[aIndex] = e.target.checked;
-                        return updated;
-                      })
-                    }
+              Create {type === 'mcq' ? 'Quiz' : 'Essay'} Assignment
+            </h1>
+            
+            {/* Dropdown menu section */}
+            <div className="relative">
+              <motion.button
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl backdrop-blur-sm transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <span>Assignment Type</span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+              </motion.button>
+              
+              <AnimatePresence>
+                {showDropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg z-50 overflow-hidden border border-gray-100"
                   >
-                    Correct
-                  </Checkbox>
-                </div>
-              ))}
+                    <motion.button
+                      whileHover={{ backgroundColor: '#e6f7ff' }}
+                      className={`w-full text-left px-4 py-3 flex items-center space-x-2 ${
+                        type === 'mcq' 
+                          ? 'bg-blue-100 text-blue-600 font-medium' 
+                          : 'text-gray-700 bg-white'
+                      }`}
+                      onClick={() => {
+                        setType('mcq');
+                        setShowDropdown(false);
+                      }}
+                    >
+                      <ListChecks className={`h-5 w-5 ${type === 'mcq' ? 'text-blue-600' : 'text-gray-600'}`} />
+                      <span>Multiple Choice</span>
+                      {type === 'mcq' && <CheckCircle className="h-4 w-4 ml-auto text-blue-600" />}
+                    </motion.button>
+                    
+                    <motion.button
+                      whileHover={{ backgroundColor: '#e6f7ff' }}
+                      className={`w-full text-left px-4 py-3 flex items-center space-x-2 ${
+                        type === 'essay' 
+                          ? 'bg-blue-100 text-blue-600 font-medium' 
+                          : 'text-gray-700 bg-white'
+                      }`}
+                      onClick={() => {
+                        setType('essay');
+                        setShowDropdown(false);
+                      }}
+                    >
+                      <Edit3 className={`h-5 w-5 ${type === 'essay' ? 'text-blue-600' : 'text-gray-600'}`} />
+                      <span>Essay</span>
+                      {type === 'essay' && <CheckCircle className="h-4 w-4 ml-auto text-blue-600" />}
+                    </motion.button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-            <Button color="danger" className='mt-4' variant="ghost" onClick={() => deleteQuestion(qIndex)}>
-              Delete Question
-            </Button>
           </div>
-        ))}
-
-      {type === 'essay' && (
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold">Essay Question</h2>
-          <input
-            type="text"
-            placeholder="Enter Question"
-            className="w-full p-4 bg-gray-100 rounded-lg"
-            value={essayQuestion.questionText}
-            onChange={(e) => setEssayQuestion({ ...essayQuestion, questionText: e.target.value })}
-          />
-          <textarea
-            placeholder="Enter Answer"
-            className="w-full p-4 bg-gray-100 rounded-lg mt-4"
-            value={essayQuestion.answer}
-            onChange={(e) => setEssayQuestion({ ...essayQuestion, answer: e.target.value })}
-          />
+          <p className="mt-2 text-blue-50">Create interactive assignments to engage your students</p>
         </div>
-      )}
 
-      <div className="mt-8">
-        <label className="block text-sm font-semibold mb-2">Password:</label>
-        <input
-          type="password"
-          placeholder="Enter Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-4 bg-gray-100 rounded-lg"
-        />
-      </div>
+        {/* Alert popup */}
+        <AnimatePresence>
+          {showAlert && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+            >
+              <div className="bg-white p-6 rounded-xl shadow-xl max-w-md w-full">
+                {alertMessage.includes('Retrying') && (
+                  <div className="flex justify-center mb-3">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    >
+                      <RefreshCw className="h-6 w-6 text-blue-500" />
+                    </motion.div>
+                  </div>
+                )}
+                
+                <p className={`text-lg ${
+                  alertMessage.includes('Error') || alertMessage.includes('timed out') 
+                    ? 'text-red-600' 
+                    : alertMessage.includes('Processing') || alertMessage.includes('Retrying')
+                      ? 'text-blue-600'
+                      : 'text-green-600'
+                } font-medium mb-4 text-center`}>
+                  {alertMessage}
+                </p>
+                
+                {/* Only show the button for non-processing states */}
+                {!alertMessage.includes('Processing') && !alertMessage.includes('Retrying') && (
+                  <Button 
+                    color={
+                      alertMessage.includes('Error') || alertMessage.includes('timed out') 
+                        ? "danger" 
+                        : "success"
+                    } 
+                    className="w-full"
+                    onClick={() => setShowAlert(false)}
+                  >
+                    OK
+                  </Button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {type === 'mcq' && (
-        <button
-          onClick={addQuestion}
-          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 mt-4"
-        >
-          Add More Questions
-        </button>
-      )}
+        <div className="p-8">
+          {/* Title and Description */}
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Assignment Title</label>
+              <input
+                type="text"
+                placeholder={type === 'mcq' ? "e.g., Geography Quiz" : "e.g., Critical Analysis Essay"}
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Assignment Description</label>
+              <textarea
+                placeholder="Provide instructions for your students"
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all min-h-[100px]"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+          </div>
 
-      <div className="mt-8 flex gap-4">
-        <Button color="success" variant="ghost" onClick={handleSubmit}>
-          Create
-        </Button>
-        <Button color="danger" variant="ghost" onClick={handleCancel}>
-          Cancel
-        </Button>
-      </div>
+          {/* Time and Date Settings */}
+          <div className="mt-8 p-6 bg-blue-50 rounded-xl border border-blue-100">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <Clock className="mr-2 h-5 w-5 text-blue-600" />
+              Time Settings
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Time Limit (Minutes)
+                </label>
+                <input
+                  type="number"
+                  value={timeLimit}
+                  onChange={(e) => setTimeLimit(Number(e.target.value))}
+                  className="p-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full"
+                  min="1"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Start Date
+                </label>
+                <input
+                  type="datetime-local"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="p-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Main Start Time
+                </label>
+                <input
+                  type="datetime-local"
+                  value={mainStartTime}
+                  onChange={(e) => setMainStartTime(e.target.value)}
+                  className="p-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Main End Time
+                </label>
+                <input
+                  type="datetime-local"
+                  value={mainEndTime}
+                  onChange={(e) => setMainEndTime(e.target.value)}
+                  className="p-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Questions Section */}
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+                {type === 'mcq' ? 
+                  <HelpCircle className="mr-2 h-5 w-5 text-blue-600" /> : 
+                  <FileText className="mr-2 h-5 w-5 text-blue-600" />
+                }
+                {type === 'mcq' ? 'Quiz Questions' : 'Essay Question'}
+              </h2>
+              
+              {type === 'mcq' && (
+                <motion.button
+                  onClick={() => addQuestion()}
+                  className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  <span>Add Question</span>
+                </motion.button>
+              )}
+            </div>
+
+            <AnimatePresence mode="popLayout">
+              {type === 'mcq' ? (
+                questions.map((q, qIndex) => (
+                  <motion.div 
+                    key={qIndex}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="mb-8 p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-medium text-gray-800">Question {qIndex + 1}</h3>
+                      <motion.button
+                        onClick={() => deleteQuestion(qIndex)}
+                        className="text-red-500 hover:text-red-700 flex items-center space-x-1"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="text-sm">Delete</span>
+                      </motion.button>
+                    </div>
+                    
+                    <div className="mb-4">
+                      <input
+                        type="text"
+                        placeholder="Enter your question"
+                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
+                        value={q.questionText}
+                        onChange={(e) =>
+                          setQuestions((prev) => {
+                            const updated = [...prev];
+                            updated[qIndex].questionText = e.target.value;
+                            return updated;
+                          })
+                        }
+                      />
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-gray-700">Answer Options:</p>
+                      {q.answers.map((answer, aIndex) => (
+                        <div key={aIndex} className="flex items-center space-x-3">
+                          <div className="flex-1">
+                            <div className="relative">
+                              <input
+                                type="text"
+                                placeholder={`Option ${aIndex + 1}`}
+                                className="w-full pl-3 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
+                                value={answer}
+                                onChange={(e) =>
+                                  setQuestions((prev) => {
+                                    const updated = [...prev];
+                                    updated[qIndex].answers[aIndex] = e.target.value;
+                                    return updated;
+                                  })
+                                }
+                              />
+                              {q.correct[aIndex] && (
+                                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                  <CheckCircle className="h-5 w-5 text-green-500" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {/* Fixed checkbox implementation */}
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={`q${qIndex}-a${aIndex}`}
+                              checked={q.correct[aIndex]}
+                              onChange={(e) => {
+                                setQuestions((prev) => {
+                                  const updated = [...prev];
+                                  updated[qIndex].correct[aIndex] = e.target.checked;
+                                  return updated;
+                                });
+                              }}
+                              className="w-4 h-4 text-green-600 focus:ring-green-500 rounded"
+                            />
+                            <label htmlFor={`q${qIndex}-a${aIndex}`} className="text-sm font-medium text-gray-700">
+                              Correct
+                            </label>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Add per-question "Add More Questions" button */}
+                    {type === 'mcq' && (
+                      <div className="mt-4 flex justify-center">
+                        <motion.button
+                          onClick={() => addQuestion(qIndex)}
+                          className="flex items-center space-x-2 text-green-600 hover:text-green-700 px-4 py-2 rounded-xl bg-green-50 hover:bg-green-100 transition-colors"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <PlusCircle className="h-4 w-4" />
+                          <span>Add Question</span>
+                        </motion.button>
+                      </div>
+                    )}
+                  </motion.div>
+                ))
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="mb-8 p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-2 text-gray-700">Question</label>
+                    <textarea
+                      placeholder="Enter your essay question here..."
+                      className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all min-h-[100px]"
+                      value={essayQuestion.questionText}
+                      onChange={(e) => setEssayQuestion({ ...essayQuestion, questionText: e.target.value })}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-gray-700">Model Answer (for grading)</label>
+                    <textarea
+                      placeholder="Provide a model answer for reference..."
+                      className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all min-h-[200px]"
+                      value={essayQuestion.answer}
+                      onChange={(e) => setEssayQuestion({ ...essayQuestion, answer: e.target.value })}
+                    />
+                    <p className="mt-1 text-sm text-gray-500">This answer will be used as a reference for grading</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Password */}
+          <div className="mt-8">
+            <label className="flex items-center text-sm font-semibold mb-2 text-gray-700">
+              <Key className="mr-2 h-4 w-4 text-blue-600" />
+              Assignment Password
+            </label>
+            <input
+              type="password"
+              placeholder="Enter Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full md:w-1/3"
+            />
+            <p className="mt-1 text-sm text-gray-500">Students will need this password to access the assignment</p>
+          </div>
+
+          {/* Buttons */}
+          <div className="mt-12 flex flex-col md:flex-row gap-4 justify-end">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button 
+                color="danger" 
+                variant="flat" 
+                onClick={handleCancel}
+                className="flex items-center justify-center w-full md:w-auto"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+            </motion.div>
+            
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button 
+                color="primary" 
+                onClick={handleSubmit}
+                isLoading={isSubmitting}
+                className="bg-gradient-to-r from-blue-500 to-green-500 text-white flex items-center justify-center w-full md:w-auto"
+              >
+                {!isSubmitting && <Save className="h-4 w-4 mr-2" />}
+                {isSubmitting ? (retryCount > 0 ? `Retrying... (${retryCount}/${maxRetries})` : 'Creating...') : `Create ${type === 'mcq' ? 'Quiz' : 'Essay'}`}
+              </Button>
+            </motion.div>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }
