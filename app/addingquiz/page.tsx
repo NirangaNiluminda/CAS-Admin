@@ -4,13 +4,14 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@nextui-org/button';
 import { Checkbox } from '@nextui-org/checkbox';
-import { Alert } from '@heroui/alert'; // Import the Alert component from @heroui/alert
+// Changed the Alert import to a more standard package
+import { Alert } from '@nextui-org/alert'; 
 import { useAdmin } from '../context/AdminContext';
 import axios from 'axios';
 
 export default function QuizForm() {
   const { admin } = useAdmin();
-  const [type, setType] = useState('mcq'); // Track the assignment type
+  const [type, setType] = useState('mcq');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('Test your basic skills');
   const [questions, setQuestions] = useState([
@@ -20,7 +21,11 @@ export default function QuizForm() {
   const [timeLimit, setTimeLimit] = useState(30);
   const [password, setPassword] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
-  const [showAlert, setShowAlert] = useState(false); // State to control the visibility of the alert modal
+  const [showAlert, setShowAlert] = useState(false);
+  // Added missing date fields
+  const [mainStartTime, setMainStartTime] = useState('');
+  const [mainEndTime, setMainEndTime] = useState('');
+  const [startDate, setStartDate] = useState('');
   const router = useRouter();
 
   const addQuestion = () => {
@@ -33,9 +38,9 @@ export default function QuizForm() {
   const deleteQuestion = (index) => {
     setQuestions((prev) => prev.filter((_, qIndex) => qIndex !== index));
     setAlertMessage(`Deleted question ${index + 1}`);
-    setShowAlert(true); // Show the alert modal
+    setShowAlert(true);
     setTimeout(() => {
-      setShowAlert(false); // Hide the alert modal after 3 seconds
+      setShowAlert(false);
       setAlertMessage('');
     }, 1000);
   };
@@ -73,28 +78,52 @@ export default function QuizForm() {
         alert('Password is required.');
         return false;
       }
+      // Added validation for date fields
+      if (!mainStartTime || !mainEndTime || !startDate) {
+        alert('All date fields are required.');
+        return false;
+      }
       return true;
     };
 
     if (!validateForm()) return;
 
+    // Set default times if not provided
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Format dates properly
+    const formattedStartDate = startDate || tomorrow.toISOString().split('T')[0] + 'T00:00:00Z';
+    const formattedMainStartTime = mainStartTime || tomorrow.toISOString().split('T')[0] + 'T09:00:00Z';
+    const formattedMainEndTime = mainEndTime || tomorrow.toISOString().split('T')[0] + 'T17:00:00Z';
+
     const quizData = {
       type,
       title,
       description,
-      timeLimit: type === 'mcq' ? timeLimit.toString() : timeLimit.toString(),
+      timeLimit: parseInt(timeLimit, 10),
       questions:
         type === 'mcq'
           ? questions.map((q) => ({
-            questionText: q.questionText,
-            options: q.answers.map((answer, idx) => ({
-              text: answer,
-              isCorrect: q.correct[idx],
-            })),
-          }))
-          : [essayQuestion],
+              questionText: q.questionText,
+              options: q.answers.map((answer, idx) => ({
+                text: answer,
+                isCorrect: q.correct[idx],
+              })),
+            }))
+          : [{ 
+              questionText: essayQuestion.questionText, 
+              answer: essayQuestion.answer 
+            }],
       teacherId: admin?._id,
       password,
+      // Added required date fields
+      mainStartTime: formattedMainStartTime,
+      mainEndTime: formattedMainEndTime,
+      startDate: formattedStartDate,
+      // Added default guidelines
+      guidelines: ["Guideline 1", "Guideline 2", "Guideline 3", "Guideline 4"]
     };
 
     try {
@@ -105,10 +134,9 @@ export default function QuizForm() {
         return;
       }
 
-      console.log(quizData);
+      console.log("Submitting quiz data:", quizData);
 
       let apiUrl;
-      // Determine the correct API URL based on the hostname
       if (typeof window !== 'undefined') {
         if (window.location.hostname === 'localhost') {
           apiUrl = 'http://localhost:4000';
@@ -118,37 +146,34 @@ export default function QuizForm() {
         }
       }
 
-      if (type === 'mcq') {
-        const response = await axios.post(`${apiUrl}/api/v1/create-assignment`, quizData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        setAlertMessage('Quiz created successfully!');
-        setShowAlert(true); // Show the alert modal
-        setTimeout(() => {
-          setShowAlert(false); // Hide the alert modal after 3 seconds
-          setAlertMessage('');
-          router.push('/dashboard');
-        }, 1000);
-      } else {
-        const response = await axios.post(`${apiUrl}/api/v1/essay/create`, quizData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        setAlertMessage('Quiz created successfully!');
-        setShowAlert(true); // Show the alert modal
-        setTimeout(() => {
-          setShowAlert(false); // Hide the alert modal after 3 seconds
-          setAlertMessage('');
-          router.push('/dashboard');
-        }, 1000);
-      }
+      // Simplified API endpoint selection
+      const endpoint = type === 'mcq' 
+        ? `${apiUrl}/api/v1/create-assignment` 
+        : `${apiUrl}/api/v1/essay/create`;
+        
+      const response = await axios.post(endpoint, quizData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log("API Response:", response.data);
+      
+      setAlertMessage('Quiz created successfully!');
+      setShowAlert(true);
+      setTimeout(() => {
+        setShowAlert(false);
+        setAlertMessage('');
+        router.push('/dashboard');
+      }, 1000);
     } catch (error) {
       console.error('Error creating assignment:', error);
+      setAlertMessage(`Error: ${error.response?.data?.message || 'Something went wrong'}`);
+      setShowAlert(true);
+      setTimeout(() => {
+        setShowAlert(false);
+      }, 3000);
     }
   };
 
@@ -172,9 +197,11 @@ export default function QuizForm() {
       </div>
 
       {showAlert && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg">
-            <Alert description={alertMessage} title="Success" />
+            <p className={`text-lg ${alertMessage.includes('Error') ? 'text-red-500' : 'text-green-500'}`}>
+              {alertMessage}
+            </p>
           </div>
         </div>
       )}
@@ -194,7 +221,8 @@ export default function QuizForm() {
           onChange={(e) => setDescription(e.target.value)}
         />
       </div>
-      <div>
+      
+      <div className="mt-4">
         <label className="block text-sm font-semibold mb-2">Time Limit (Minutes):</label>
         <input
           type="number"
@@ -203,6 +231,37 @@ export default function QuizForm() {
           className="p-2 bg-gray-100 rounded-lg"
           min="1"
         />
+      </div>
+
+      {/* Added date fields */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+        <div>
+          <label className="block text-sm font-semibold mb-2">Start Date:</label>
+          <input
+            type="datetime-local"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="p-2 bg-gray-100 rounded-lg w-full"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold mb-2">Main Start Time:</label>
+          <input
+            type="datetime-local"
+            value={mainStartTime}
+            onChange={(e) => setMainStartTime(e.target.value)}
+            className="p-2 bg-gray-100 rounded-lg w-full"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold mb-2">Main End Time:</label>
+          <input
+            type="datetime-local"
+            value={mainEndTime}
+            onChange={(e) => setMainEndTime(e.target.value)}
+            className="p-2 bg-gray-100 rounded-lg w-full"
+          />
+        </div>
       </div>
 
       {type === 'mcq' &&
