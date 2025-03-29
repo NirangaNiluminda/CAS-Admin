@@ -99,7 +99,8 @@ export default function ViewResult() {
   const [studentDetails, setStudentDetails] = useState({
     name: 'Student',
     email: '',
-    id: sid
+    id: sid,
+    registrationNumber:'',
   });
   const INITIAL_DISPLAY_COUNT = 3;
   
@@ -173,7 +174,40 @@ export default function ViewResult() {
       }
     };
 
+    const fetchStudent = async () => {
+      const token = localStorage.getItem('token');
+      let apiUrl;
+
+      if (typeof window !== 'undefined') {
+        apiUrl = window.location.hostname === 'localhost'
+          ? 'http://localhost:4000'
+          : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+      }
+
+      try {
+        const response = await fetch(`${apiUrl}/api/v1/user/${sid}`,{
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        if (!response.ok) {
+          throw new Error(`Error: ${response.statusText}`);
+        }
+        const data = await response.json();
+        setStudentDetails({
+          name: data.user.name,
+          email: data.user.email,
+          id: sid,
+          registrationNumber: data.user.registrationNumber,
+        })
+      }
+      catch (error) {
+        console.error('Failed to fetch student details:', error);
+      }
+    }
+
     fetchResults();
+    fetchStudent();
   }, [id, sid]);
   
   useEffect(() => {

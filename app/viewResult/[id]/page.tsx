@@ -164,6 +164,8 @@ export default function ViewResult() {
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const apiUrl = getApiUrl();
+  const [registrationNumber, setRegistrationNumber] = useState('');
+  const [studentName, setStudentName] = useState('');
 
   const [sortConfig, setSortConfig] = useState<{
     key: keyof QuizResult | null;
