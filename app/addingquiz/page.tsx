@@ -358,6 +358,8 @@ export default function QuizForm() {
       <div className="fixed top-20 right-40 w-64 h-64 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
       <div className="fixed bottom-40 left-20 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
 
+
+
       
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
