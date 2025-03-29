@@ -212,143 +212,124 @@ export default function QuizForm() {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-    
+
     setIsSubmitting(true);
     setRetryCount(0);
     setAlertMessage('Processing your request...');
     setShowAlert(true);
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setAlertMessage('No authentication token found. Please login.');
-        setShowAlert(true);
-        router.push('/login');
-        return;
-      }
+        const token = localStorage.getItem('token');
+        if (!token) {
+            setAlertMessage('No authentication token found. Please login.');
+            setShowAlert(true);
+            router.push('/login');
+            return;
+        }
 
-      // Determine API URL
-      let apiUrl;
-      if (typeof window !== 'undefined') {
-        if (window.location.hostname === 'localhost') {
-          apiUrl = 'http://localhost:4000';
+        // Determine API URL
+        let apiUrl;
+        if (typeof window !== 'undefined') {
+            if (window.location.hostname === 'localhost') {
+                apiUrl = 'http://localhost:4000';
+            } else {
+                apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+            }
+        }
+
+        // Format dates
+        const formatDate = (dateString) => {
+            if (!dateString.includes('Z')) {
+                return new Date(dateString).toISOString();
+            }
+            return dateString;
+        };
+
+        // Create the payload
+        const assignmentData = {
+            title,
+            description,
+            timeLimit: parseInt(timeLimit, 10),
+            password,
+            teacherId: admin?._id,
+            startDate: formatDate(startDate),
+            endDate: formatDate(mainEndTime), // Use `mainEndTime` as `endDate`
+            guidelines: ["Guideline 1", "Guideline 2", "Guideline 3", "Guideline 4"], // Example guidelines
+        };
+
+        if (type === 'mcq') {
+            // For MCQ quizzes
+            assignmentData.questions = questions.map((q) => ({
+                questionText: q.questionText,
+                options: q.answers.map((answer, idx) => ({
+                    text: answer,
+                    isCorrect: q.correct[idx],
+                })),
+            }));
+
+            console.log("Sending MCQ data:", JSON.stringify(assignmentData, null, 2));
+
+            const endpoint = `${apiUrl}/api/v1/create-assignment`;
+            console.log("Sending to endpoint:", endpoint);
+
+            const response = await submitWithRetry(endpoint, assignmentData, token);
+
+            if (response && response.data) {
+                setAlertMessage('Quiz created successfully!');
+                setShowAlert(true);
+                setTimeout(() => {
+                    setShowAlert(false);
+                    router.push('/dashboard');
+                }, 1500);
+            }
         } else {
-          apiUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
-        }
-      }
-      
-      // Function to ensure dates are properly formatted
-      const formatDate = (dateString) => {
-        if (!dateString) {
-          const tomorrow = new Date();
-          tomorrow.setDate(tomorrow.getDate() + 1);
-          return tomorrow.toISOString();
-        }
-        
-        // Handle datetime-local input format
-        if (!dateString.includes('Z')) {
-          return new Date(dateString).toISOString();
-        }
-        
-        return dateString;
-      };
+            // For Essay
+            assignmentData.questions = [
+                {
+                    questionText: essayQuestion.questionText,
+                    answer: essayQuestion.answer,
+                },
+            ];
 
-      // Create a minimal test quiz with just enough data for testing
-      const simplifiedData = {
-        title,
-        description,
-        timeLimit: parseInt(timeLimit, 10),
-        password,
-        teacherId: admin?._id,
-        mainStartTime: formatDate(mainStartTime),
-        mainEndTime: formatDate(mainEndTime),
-        startDate: formatDate(startDate)
-      };
+            console.log("Sending Essay data:", JSON.stringify(assignmentData, null, 2));
 
-      if (type === 'mcq') {
-        // For MCQ quizzes
-        simplifiedData.questions = questions.map(q => ({
-          questionText: q.questionText,
-          options: q.answers.map((answer, idx) => ({
-            text: answer,
-            isCorrect: q.correct[idx]
-          }))
-        }));
-        
-        console.log("Sending MCQ data:", JSON.stringify(simplifiedData, null, 2));
-        
-        // Choose endpoint and submit with retry
-        const endpoint = `${apiUrl}/api/v1/create-assignment`;
-        console.log("Sending to endpoint:", endpoint);
-        
-        const response = await submitWithRetry(endpoint, simplifiedData, token);
-        
-        console.log("Full API Response:", response);
-        
-        if (response && response.data) {
-          console.log("Response data:", response.data);
-          
-          setAlertMessage('Quiz created successfully!');
-          setShowAlert(true);
-          setTimeout(() => {
-            setShowAlert(false);
-            router.push('/dashboard');
-          }, 1500);
+            const endpoint = `${apiUrl}/api/v1/essay/create`;
+            console.log("Sending to endpoint:", endpoint);
+
+            const response = await submitWithRetry(endpoint, assignmentData, token);
+
+            if (response && response.data) {
+                setAlertMessage('Essay created successfully!');
+                setShowAlert(true);
+                setTimeout(() => {
+                    setShowAlert(false);
+                    router.push('/dashboard');
+                }, 1500);
+            }
         }
-      } else {
-        // For Essay
-        simplifiedData.questions = [{ 
-          questionText: essayQuestion.questionText, 
-          answer: essayQuestion.answer 
-        }];
-        
-        console.log("Sending Essay data:", JSON.stringify(simplifiedData, null, 2));
-        
-        // Choose endpoint and submit with retry
-        const endpoint = `${apiUrl}/api/v1/essay/create`;
-        console.log("Sending to endpoint:", endpoint);
-        
-        const response = await submitWithRetry(endpoint, simplifiedData, token);
-        
-        console.log("Full API Response:", response);
-        
-        if (response && response.data) {
-          console.log("Response data:", response.data);
-          
-          setAlertMessage('Essay created successfully!');
-          setShowAlert(true);
-          setTimeout(() => {
-            setShowAlert(false);
-            router.push('/dashboard');
-          }, 1500);
-        }
-      }
     } catch (error) {
-      console.error('Error creating assignment:', error);
-      
-      if (error.message === 'Request timed out') {
-        setAlertMessage(`Request timed out after ${maxRetries} attempts. The server is not responding.`);
-      } else if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        console.error('Server error details:', error.response.data);
-        console.error('Status code:', error.response.status);
-        setAlertMessage(`Error (${error.response.status}): ${error.response.data?.message || 'Server returned an error'}`);
-      } else if (error.request) {
-        // The request was made but no response was received
-        console.error('No response received:', error.request);
-        setAlertMessage('No response received from server. Check your network connection.');
-      } else {
-        // Something happened in setting up the request
-        console.error('Error message:', error.message);
-        setAlertMessage(`Error: ${error.message}`);
-      }
-      
-      setShowAlert(true);
+        console.error('Error creating assignment:', error);
+
+        if (error instanceof Error && error.message === 'Request timed out') {
+            setAlertMessage(`Request timed out after ${maxRetries} attempts. The server is not responding.`);
+        } else if (axios.isAxiosError(error) && error.response) {
+            console.error('Server error details:', error.response.data);
+            setAlertMessage(`Error (${error.response.status}): ${error.response.data?.message || 'Server returned an error'}`);
+        } else if (axios.isAxiosError(error) && error.request) {
+            setAlertMessage('No response received from server. Check your network connection.');
+        } else {
+            if (error instanceof Error) {
+              setAlertMessage(`Error: ${error.message}`);
+            } else {
+              setAlertMessage('An unknown error occurred.');
+            }
+        }
+
+        setShowAlert(true);
     } finally {
-      setIsSubmitting(false);
+        setIsSubmitting(false);
     }
-  };
+};
 
   return (
 
@@ -545,19 +526,7 @@ export default function QuizForm() {
               
               <div>
                 <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  Main Start Time
-                </label>
-                <input
-                  type="datetime-local"
-                  value={mainStartTime}
-                  onChange={(e) => setMainStartTime(e.target.value)}
-                  className="p-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  Main End Time
+                  End Date
                 </label>
                 <input
                   type="datetime-local"
