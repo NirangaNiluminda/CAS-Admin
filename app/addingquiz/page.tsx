@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@nextui-org/button';
-import { Alert } from '@nextui-org/alert'; 
 import { useAdmin } from '../context/AdminContext';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
