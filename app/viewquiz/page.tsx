@@ -11,7 +11,7 @@ import { Download, ArrowLeft, Eye, FileSpreadsheet, BookOpen } from 'lucide-reac
 import { ScrollArea } from '../components/ui/scroll-area';
 import { Skeleton } from '../components/ui/skeleton';
 import { Badge } from '../components/ui/badge';
-
+import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 interface Quiz {
   _id: string;
   title: string;
@@ -120,6 +120,7 @@ export default function ViewQuiz() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
+          <Breadcrumbs items={[{ label: 'Loading Quiz...' }]} />
           <Card className="backdrop-blur-sm bg-white/80 border-green-200 shadow-lg">
             <CardHeader>
               <Skeleton className="h-8 w-[250px]" />
@@ -144,11 +145,12 @@ export default function ViewQuiz() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
+      <Breadcrumbs items={[{ label: quiz.title }]} />
         <Card className="backdrop-blur-sm bg-white/90 shadow-xl border border-green-200">
           <CardHeader className="space-y-4 pb-8">
             <div className="flex items-center justify-between">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={handleGoBack}
                 className="absolute left-4 hover:bg-green-50 border-0"
@@ -171,9 +173,9 @@ export default function ViewQuiz() {
               </CardDescription>
             )}
           </CardHeader>
-          
+
           <Separator className="bg-green-100" />
-          
+
           <CardContent className="p-8">
             <ScrollArea className="h-[60vh] rounded-lg border border-green-200 bg-white">
               <Table>
@@ -197,13 +199,12 @@ export default function ViewQuiz() {
                       <TableCell className="max-w-xl">
                         <div className="grid grid-cols-1 gap-2">
                           {question.options.map((option) => (
-                            <div 
+                            <div
                               key={option._id}
-                              className={`p-2 rounded-md text-sm ${
-                                option.isCorrect 
+                              className={`p-2 rounded-md text-sm ${option.isCorrect
                                   ? 'bg-green-50 text-green-700 border border-green-200'
                                   : 'bg-gray-50 text-gray-600 border border-gray-200'
-                              }`}
+                                }`}
                             >
                               {option.text}
                             </div>
@@ -221,7 +222,7 @@ export default function ViewQuiz() {
           </CardContent>
 
           <Separator className="bg-green-100" />
-          
+
           <CardFooter className="p-8 flex flex-wrap gap-4 justify-center bg-gradient-to-r from-green-50 to-green-100 rounded-bl-md rounded-br-md">
             <Button
               variant="bordered"

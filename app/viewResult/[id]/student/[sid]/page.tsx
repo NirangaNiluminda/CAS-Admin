@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Clock, CheckCircle2, XCircle, ArrowLeft, Trophy, AlertTriangle, ChevronUp, ChevronDown, TvMinimalIcon } from 'lucide-react';
 import { useQuiz } from '../../../../context/QuizContext';
-
+import { Breadcrumbs } from '../../../../components/ui/Breadcrumbs';
 interface Answer {
   questionId: string;
   selectedOption: string;
@@ -44,6 +44,7 @@ export default function ViewResult() {
   const [violations, setViolations] = useState<ViolationData[]>([]);
   const [showAllViolations, setShowAllViolations] = useState(false);
   const [showAllTimeline, setShowAllTimeline] = useState(false);
+  const [regNum, setRegNum] = useState<string | null>(null);
   const INITIAL_DISPLAY_COUNT = 3;
   const handleGoBack = () => {
     if (quiz) {
@@ -55,7 +56,13 @@ export default function ViewResult() {
     const fetchResults = async () => {
       const token = localStorage.getItem('token');
       let apiUrl;
+      
 
+    // Get registration number from URL query parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const regNum = urlParams.get('regNum');
+    
+    
       if (typeof window !== 'undefined') {
         apiUrl = window.location.hostname === 'localhost'
           ? 'http://localhost:4000'
@@ -99,6 +106,7 @@ export default function ViewResult() {
 
         setQuizResults(processedResults);
         setMcqData(processedAnswers);
+        setRegNum(regNum);
       } catch (error) {
         console.error('Failed to fetch quiz results:', error);
       } finally {
@@ -154,6 +162,15 @@ export default function ViewResult() {
       ) : quizResults ? (
         <div className="min-h-screen p-8">
           <div className="max-w-6xl mx-auto">
+          {quiz && (
+              <Breadcrumbs 
+                items={[
+                  { label: quiz.title, href: '/viewquiz' },
+                  { label: 'Results', href: `/viewResult/${quiz._id}` },
+                  { label: regNum || `Student ${sid.slice(0, 8)}` }
+                ]} 
+              />
+            )}
             {/* Header Section */}
             <div className="bg-white rounded-lg shadow-md border border-green-200 p-6 mb-8">
               <div className="flex items-center justify-between mb-6">
@@ -203,6 +220,52 @@ export default function ViewResult() {
                     <p className="text-2xl font-bold text-red-600">{violations.length}</p>
                   </div>
                 </div>
+              </div>
+            </div>
+            
+            {/* Results Table */}
+            <div className="bg-white rounded-lg shadow-md border border-green-200 p-6 mb-8 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-green-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider">
+                        Question
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider">
+                        Selected Answer
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {mcqData.map((answer, index) => (
+                      <tr key={answer._id} className="hover:bg-green-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {answer.questionText}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {answer.selectedOptionText}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {answer.isCorrect ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-sm bg-green-100 text-green-800">
+                              <CheckCircle2 size={14} />
+                              Correct
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-sm bg-red-100 text-red-800">
+                              <XCircle size={14} />
+                              Incorrect
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
             {/* Violations Section */}
@@ -324,51 +387,6 @@ export default function ViewResult() {
                 </div>
               </div>
             )}
-            {/* Results Table */}
-            <div className="bg-white rounded-lg shadow-md border border-green-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-green-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider">
-                        Question
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider">
-                        Selected Answer
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {mcqData.map((answer, index) => (
-                      <tr key={answer._id} className="hover:bg-green-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {answer.questionText}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {answer.selectedOptionText}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {answer.isCorrect ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-sm bg-green-100 text-green-800">
-                              <CheckCircle2 size={14} />
-                              Correct
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-sm bg-red-100 text-red-800">
-                              <XCircle size={14} />
-                              Incorrect
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
           </div>
         </div>
       ) : (

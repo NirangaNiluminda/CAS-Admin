@@ -8,7 +8,7 @@ import { Checkbox } from '@nextui-org/checkbox';
 import { Alert } from '@nextui-org/alert'; 
 import { useAdmin } from '../context/AdminContext';
 import axios from 'axios';
-
+import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 export default function QuizForm() {
   const { admin } = useAdmin();
   const [type, setType] = useState('mcq');
@@ -178,8 +178,15 @@ export default function QuizForm() {
   };
 
   return (
+
     <div className="w-full max-w-5xl mx-auto p-8 bg-white rounded-lg shadow-md">
+      <Breadcrumbs
+        items={[
+          { label: 'Create Assignment' }
+        ]}
+      />
       <div className="flex justify-between items-center">
+
         <h1 className="text-3xl font-bold mb-6">Create an Assignment</h1>
         <div className="flex items-center gap-4">
           <label className="block text-sm font-semibold">Type</label>

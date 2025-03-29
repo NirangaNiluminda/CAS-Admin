@@ -47,7 +47,9 @@ import {
     BarChart3 
 } from 'lucide-react';
 import { toast } from "sonner";
+
 import { motion, AnimatePresence } from "framer-motion";
+
 
 interface Assignment {
     _id: string;
@@ -210,8 +212,11 @@ export default function Page() {
                 return 0;
             })
         : [];
-
+    useEffect(() => {
+        localStorage.removeItem('currentBreadcrumbs');
+    }, []);
     return (
+
         <div className="min-h-screen bg-gradient-to-b from-green-50 via-green-50 to-white p-4 md:p-8">
             {/* Decorative elements */}
             <div className="fixed top-20 left-20 w-64 h-64 bg-green-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
@@ -229,6 +234,7 @@ export default function Page() {
                         <div className="flex items-center space-x-4 mb-4 md:mb-0">
                             <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl shadow-lg flex items-center justify-center transform rotate-3">
                                 <BookOpen className="h-8 w-8 text-white" />
+
                             </div>
                             <div>
                                 <h1 className="text-3xl font-bold text-gray-800">Teacher Dashboard</h1>
@@ -411,10 +417,12 @@ export default function Page() {
                                 </SelectContent>
                             </Select>
 
+
                             <Select value={assignmentType} onValueChange={(value) => setAssignmentType(value as 'quiz' | 'essay')}>
                                 <SelectTrigger className="h-12 rounded-xl border-green-200 focus:border-green-400 focus:ring-green-400">
                                     <div className="flex items-center">
                                         <FileText className="h-5 w-5 mr-2 text-gray-500" />
+
                                         <SelectValue placeholder="Assignment type..." />
                                     </div>
                                 </SelectTrigger>
