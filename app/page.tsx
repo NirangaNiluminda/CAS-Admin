@@ -166,8 +166,8 @@ export default function Home() {
                         <div className="text-center mb-8">
                             <h1 className="text-2xl font-bold text-gray-800 mb-2">Sign in with email</h1>
                             <p className="text-gray-600">
-                                Make a new doc to bring your words, data,<br />
-                                and teams together. For free
+                                Signup for free,<br />
+                                
                             </p>
                         </div>
                         
