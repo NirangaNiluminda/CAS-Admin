@@ -143,8 +143,8 @@ export default function EditProfile() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 px-4">
             {/* Cute decorative elements */}
-            <div className="absolute top-10 left-10 w-16 h-16 rounded-full bg-green-200 opacity-60"></div>
-            <div className="absolute top-20 right-20 w-24 h-24 rounded-full bg-green-100 opacity-40"></div>
+            <div className="absolute top-50 right-10 w-16 h-16 rounded-full bg-green-200 opacity-60"></div>
+            <div className="absolute top-10 right-20 w-24 h-24 rounded-full bg-green-100 opacity-40"></div>
             <div className="absolute bottom-10 left-1/4 w-20 h-20 rounded-full bg-green-200 opacity-50"></div>
             <div className="absolute bottom-20 right-1/3 w-12 h-12 rounded-full bg-green-100 opacity-30"></div>
 
