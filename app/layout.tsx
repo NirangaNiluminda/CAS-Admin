@@ -6,6 +6,7 @@ import Navbar from "./components/Navbar/Navbar";
 import { QuizProvider } from "./context/QuizContext";
 import { EssayProvider } from "./context/EssayContext";
 import { Toaster } from 'sonner';
+import { motion, AnimatePresence } from "framer-motion";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
