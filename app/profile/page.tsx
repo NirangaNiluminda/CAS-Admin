@@ -14,15 +14,23 @@ export default function EditProfile() {
     const [profile, setProfile] = useState({
         name: '',
         email: '',
-        password: '',
-        confirmPassword: '',
+        oldPassword: '',
+        newPassword: '',
     });
     const [errors, setErrors] = useState({
         name: '',
         email: '',
-        password: '',
-        confirmPassword: '',
+        oldPassword: '',
+        newPassword: '',
     });
+
+    const [apiUrl, setApiUrl] = useState('');
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setApiUrl(window.location.hostname === 'localhost' ? 'http://localhost:4000' : process.env.NEXT_PUBLIC_DEPLOYMENT_URL || '');
+        }
+    }, []);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -41,28 +49,23 @@ export default function EditProfile() {
 
     const validateForm = () => {
         let isValid = true;
-        const newErrors = { name: '', email: '', password: '', confirmPassword: '' };
+        const newErrors = { name: '', email: '', oldPassword: '', newPassword: '' };
 
-        if (!profile.name) {
+        if (!profile.name && !(profile.oldPassword.length > 0) && !(profile.newPassword.length > 0)) {
             newErrors.name = 'Name is required';
             isValid = false;
         }
 
-        if (!profile.email) {
+        if (!profile.email&& !(profile.oldPassword.length > 0) && !(profile.newPassword.length > 0)) {
             newErrors.email = 'Email is required';
             isValid = false;
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email)) {
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email) && !(profile.oldPassword.length > 0) && !(profile.newPassword.length > 0)) {
             newErrors.email = 'Enter a valid email';
             isValid = false;
         }
 
-        if (profile.password && profile.password.length < 6) {
-            newErrors.password = 'Password must be at least 6 characters';
-            isValid = false;
-        }
-
-        if (profile.password && profile.password !== profile.confirmPassword) {
-            newErrors.confirmPassword = 'Passwords do not match';
+        if (profile.oldPassword && profile.newPassword.length < 6) {
+            newErrors.newPassword = 'Password must be at least 6 characters';
             isValid = false;
         }
 
@@ -85,17 +88,44 @@ export default function EditProfile() {
             return;
         }
 
-        try {
-            const token = localStorage.getItem('token');
-            await axios.put('/api/v1/update-profile', profile, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+        const profileData = {
+            name: profile.name,
+            email: profile.email,
+        }
 
-            toast.success('Profile updated successfully!');
-            router.push('/dashboard');
-        } catch (error) {
-            console.error('Error updating profile:', error);
-            toast.error('Failed to update profile');
+        const passwordData = {
+            oldPassword: profile.oldPassword,
+            newPassword: profile.newPassword,
+        }
+
+        if(profileData.name.length > 0 || profileData.email.length > 0) {
+            try {
+                const token = localStorage.getItem('token');
+                await axios.put(`${apiUrl}/api/v1/update-profile`, profileData, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                toast.success('Profile updated successfully!');
+                router.push('/dashboard');
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                toast.error('Failed to update profile');
+            }
+        }
+
+        if(passwordData.oldPassword.length > 0 && passwordData.newPassword.length > 0) {
+            try {
+                const token = localStorage.getItem('token');
+                await axios.put(`${apiUrl}/api/v1/update-password`, passwordData, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+    
+                toast.success('Password updated successfully!');
+                router.push('/dashboard');
+            } catch (error) {
+                console.error('Error updating password:', error);
+                toast.error('Failed to update password');
+            }
         }
     };
 
@@ -120,15 +150,15 @@ export default function EditProfile() {
                         </div>
 
                         <div>
-                            <Label htmlFor="password">New Password</Label>
-                            <Input id="password" type="password" value={profile.password} onChange={handleChange} />
-                            {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
+                            <Label htmlFor="oldPassword">Old Password</Label>
+                            <Input id="oldPassword" type="password" value={profile.oldPassword} onChange={handleChange} />
+                            {errors.oldPassword && <p className="text-sm text-red-500">{errors.oldPassword}</p>}
                         </div>
 
                         <div>
-                            <Label htmlFor="confirmPassword">Confirm Password</Label>
-                            <Input id="confirmPassword" type="password" value={profile.confirmPassword} onChange={handleChange} />
-                            {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword}</p>}
+                            <Label htmlFor="newPassword">New Password</Label>
+                            <Input id="newPassword" type="password" value={profile.newPassword} onChange={handleChange} />
+                            {errors.newPassword && <p className="text-sm text-red-500">{errors.newPassword}</p>}
                         </div>
                     </div>
 
