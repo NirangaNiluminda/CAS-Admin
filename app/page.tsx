@@ -69,7 +69,7 @@ export default function Home() {
     const handleChange = (e) => {
         const { id, value } = e.target;
         setFormData({ ...formData, [id]: value });
-        
+
         // Clear error when user starts typing
         if (errors[id]) {
             setErrors({ ...errors, [id]: '' });
@@ -111,10 +111,10 @@ export default function Home() {
 
                 // Update admin context
                 setAdmin(response.data.user);
-                
+
                 // Set the Authorization header for future requests
                 axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.accessToken}`;
-                
+
                 toast.success('Successfully signed in!');
                 router.push('/dashboard');
             }
@@ -136,14 +136,27 @@ export default function Home() {
         setShowPassword(!showPassword);
     };
 
+    // stuff for animate bubbles with framer motion
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 px-4">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 px-4" >
             {/* Cute decorative elements */}
-            <div className="absolute top-10 left-10 w-16 h-16 rounded-full bg-green-200 opacity-60"></div>
-            <div className="absolute top-20 right-20 w-24 h-24 rounded-full bg-green-100 opacity-40"></div>
-            <div className="absolute bottom-10 left-1/4 w-20 h-20 rounded-full bg-green-200 opacity-50"></div>
-            <div className="absolute bottom-20 right-1/3 w-12 h-12 rounded-full bg-green-100 opacity-30"></div>
-            
+            < motion.div
+                initial={{ top: 10, left: 10 }}
+                animate={{ top: 50, left: 20 }
+                }
+                transition={{ duration: 1.0, repeat: Infinity, repeatType: "reverse" }}
+                className="absolute top-10 left-10 w-16 h-16 rounded-full bg-green-200 opacity-60" >
+            </motion.div >
+            <motion.div
+                initial={{ top: 20, right: 20 }}
+                animate={{ bottom: 10, right: 80 }
+                }
+                transition={{ duration: 3.0, repeat: Infinity, repeatType: "reverse" }}
+                className="absolute top-20 right-20 w-24 h-24 rounded-full bg-green-200 opacity-60"></motion.div>
+            <motion.div className="absolute bottom-10 left-1/4 w-20 h-20 rounded-full bg-green-200 opacity-50"></motion.div>
+            <motion.div className="absolute bottom-20 right-1/3 w-12 h-12 rounded-full bg-green-100 opacity-30"></motion.div>
+
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -162,15 +175,15 @@ export default function Home() {
                                 className="rounded-2xl"
                             />
                         </div>
-                        
+
                         <div className="text-center mb-8">
                             <h1 className="text-2xl font-bold text-gray-800 mb-2">Sign in with email</h1>
                             <p className="text-gray-600">
                                 Signup for free,<br />
-                                
+
                             </p>
                         </div>
-                        
+
                         <div className="space-y-5 w-full">
                             <div className="space-y-2">
                                 <div className="relative">
@@ -187,7 +200,7 @@ export default function Home() {
                                     />
                                 </div>
                                 {errors.email && (
-                                    <motion.p 
+                                    <motion.p
                                         initial={{ opacity: 0, height: 0 }}
                                         animate={{ opacity: 1, height: 'auto' }}
                                         className="text-sm text-red-500 mt-1 pl-2"
@@ -196,7 +209,7 @@ export default function Home() {
                                     </motion.p>
                                 )}
                             </div>
-                            
+
                             <div className="space-y-2">
                                 <div className="relative">
                                     <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
@@ -210,7 +223,7 @@ export default function Home() {
                                         onChange={handleChange}
                                         className={`h-12 pl-12 pr-12 rounded-xl bg-green-50/80 border-0 ${errors.password ? 'ring-2 ring-red-500' : 'focus:ring-green-300'}`}
                                     />
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={togglePasswordVisibility}
                                         className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
@@ -219,7 +232,7 @@ export default function Home() {
                                     </button>
                                 </div>
                                 {errors.password && (
-                                    <motion.p 
+                                    <motion.p
                                         initial={{ opacity: 0, height: 0 }}
                                         animate={{ opacity: 1, height: 'auto' }}
                                         className="text-sm text-red-500 mt-1 pl-2"
@@ -228,7 +241,7 @@ export default function Home() {
                                     </motion.p>
                                 )}
                             </div>
-                            
+
                             <div className="flex justify-end">
                                 <Button
                                     variant="link"
@@ -238,7 +251,7 @@ export default function Home() {
                                     Forgot password?
                                 </Button>
                             </div>
-                            
+
                             <motion.div
                                 whileHover={{ scale: 1.01 }}
                                 whileTap={{ scale: 0.99 }}
@@ -258,7 +271,7 @@ export default function Home() {
                                     )}
                                 </Button>
                             </motion.div>
-                            
+
                             <div className="flex items-center space-x-2 mt-4">
                                 <Checkbox
                                     id="remember"
@@ -283,6 +296,6 @@ export default function Home() {
                     </div>
                 </Card>
             </motion.div>
-        </div>
+        </div >
     );
 }
