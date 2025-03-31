@@ -141,19 +141,19 @@ export default function Home() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 px-4" >
             {/* Cute decorative elements */}
-            < motion.div
-                initial={{ top: 10, left: 10 }}
-                animate={{ top: 50, left: 20 }
+            <motion.div
+                initial={{ top: Math.random() * 100, left: Math.random() * 100 }}
+                animate={{ top: Math.random() * 100, left: Math.random() * 100 }}
+                transition={{ duration: 1.0, repeat: Infinity, repeatType: "reverse" }}
+                className="absolute w-16 h-16 rounded-full bg-green-200 opacity-60"
+            >
+            </motion.div>
+            <motion.div
+                initial={{ top: Math.random() * 100, right: Math.random() * 100 }}
+                animate={{ bottom: Math.random() * 100, right: Math.random() * 100 }
                 }
                 transition={{ duration: 1.0, repeat: Infinity, repeatType: "reverse" }}
-                className="absolute top-10 left-10 w-16 h-16 rounded-full bg-green-200 opacity-60" >
-            </motion.div >
-            <motion.div
-                initial={{ top: 20, right: 20 }}
-                animate={{ bottom: 10, right: 80 }
-                }
-                transition={{ duration: 3.0, repeat: Infinity, repeatType: "reverse" }}
-                className="absolute top-20 right-20 w-24 h-24 rounded-full bg-green-200 opacity-60"></motion.div>
+                className="absolute w-24 h-24 rounded-full bg-green-200 opacity-60"></motion.div>
             <motion.div className="absolute bottom-10 left-1/4 w-20 h-20 rounded-full bg-green-200 opacity-50"></motion.div>
             <motion.div className="absolute bottom-20 right-1/3 w-12 h-12 rounded-full bg-green-100 opacity-30"></motion.div>
 
