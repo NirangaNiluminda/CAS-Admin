@@ -282,11 +282,18 @@ export default function ViewResult() {
     });
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center">
-        <Breadcrumbs items={[{ label: 'Loading Results...' }]} />
-        <div className="text-center">
-          <div className="inline-block w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mb-4"></div>
-          <p className="text-green-700 font-medium">Loading quiz results...</p>
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col">
+        {/* Breadcrumbs container positioned at the top */}
+        <div className="w-full max-w-4xl mx-auto pt-4 px-4">
+          <Breadcrumbs items={[{ label: 'Loading Results...' }]} />
+        </div>
+
+        {/* Loading spinner centered in the remaining space */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mb-4"></div>
+            <p className="text-green-700 font-medium">Loading quiz results...</p>
+          </div>
         </div>
       </div>
     );
@@ -294,28 +301,37 @@ export default function ViewResult() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center">
-        <Breadcrumbs items={[{ label: 'Error' }]} />
-        <Card className="w-full max-w-md shadow-lg border-red-200">
-          <CardHeader className="bg-red-50">
-            <CardTitle className="text-red-700 flex items-center gap-2">
-              <AlertTriangle size={20} />
-              Error Loading Data
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <p className="text-gray-600 mb-4">
-              There was a problem fetching the quiz results. Please try again later.
-            </p>
-            <Button
-              onClick={handleGoBack}
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
-            >
-              <ArrowLeft size={16} className="mr-2" />
-              Return to Quizzes
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col">
+        {/* Breadcrumbs container positioned at the top */}
+        <div className="w-full max-w-4xl mx-auto pt-4 px-4">
+          <Breadcrumbs items={[{ label: 'Error' }]} />
+        </div>
+
+        {/* Card container centered in the remaining space */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="max-w-4xl mx-auto px-4">
+            <Card className="w-full max-w-md shadow-lg border-red-200">
+              <CardHeader className="bg-red-50">
+                <CardTitle className="text-red-700 flex items-center gap-2">
+                  <AlertTriangle size={20} />
+                  Error Loading Data
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <p className="text-gray-600 mb-4">
+                  There was a problem fetching the quiz results. Please try again later.
+                </p>
+                <Button
+                  onClick={handleGoBack}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <ArrowLeft size={16} className="mr-2" />
+                  Return to Quizzes
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
