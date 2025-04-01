@@ -7,7 +7,7 @@ import { Button } from '@nextui-org/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/table';
 import { Separator } from '../components/ui/separator';
-import { Download, ArrowLeft, Eye, FileSpreadsheet, BookOpen, User, Calendar, Clock, Check, X, Share2, Printer, Info, HelpCircle, BarChart3 } from 'lucide-react';
+import { Download, ArrowLeft, Eye, FileSpreadsheet, BookOpen, User, Calendar, Clock, Check, X, Share2, Printer, Info, HelpCircle, BarChart3, Loader } from 'lucide-react';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { Skeleton } from '../components/ui/skeleton';
 import { Badge } from '../components/ui/badge';
@@ -18,6 +18,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../com
 import { motion } from "framer-motion";
 import { useAdmin } from '../context/AdminContext';
 import { Breadcrumbs } from '../components/ui/Breadcrumbs';
+
 interface Quiz {
   _id: string;
   title: string;
@@ -40,6 +41,15 @@ interface Quiz {
   }[];
 }
 
+interface QuizStats {
+  totalStudents: number;
+  completedAttempts: number;
+  averageScore: number;
+  highestScore: number;
+  completionRate: number;
+  activeStudents: number;
+}
+
 export default function ViewQuiz() {
   const router = useRouter();
   const { admin } = useAdmin();
@@ -47,19 +57,30 @@ export default function ViewQuiz() {
   const { id } = useParams();
   const { quiz } = useQuiz();
   const [activeTab, setActiveTab] = useState("overview");
-  const [quizStats, setQuizStats] = useState({
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
+  const [quizStats, setQuizStats] = useState<QuizStats>({
     totalStudents: 0,
     completedAttempts: 0,
     averageScore: 0,
     highestScore: 0,
-    completionRate: 0
+    completionRate: 0,
+    activeStudents: 0
   });
 
   useEffect(() => {
-    // Fetch additional quiz statistics
+    if (admin?.name) {
+      setName(admin.name);
+    }
+  }, [admin]);
+
+  // Consolidated useEffect for fetching quiz statistics
+  useEffect(() => {
+    // Fetch quiz statistics
     const fetchQuizStats = async () => {
       if (!quiz) return;
-
+      
+      setIsStatsLoading(true);
+  
       try {
         let apiUrl;
         if (typeof window !== 'undefined') {
@@ -67,39 +88,53 @@ export default function ViewQuiz() {
             ? 'http://localhost:4000'
             : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
         }
-
-        const response = await fetch(`${apiUrl}/api/v1/quiz-stats/${quiz._id}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-
+  
+        // Use the endpoint that doesn't require authorization
+        const response = await fetch(`${apiUrl}/api/v1/stats/${quiz._id}`);
+  
         if (response.ok) {
           const data = await response.json();
+          console.log("Quiz stats data:", data);
+          
+          // Consistent calculation of total students and completion rate
+          const activeCount = data.activeCount || 0;
+          const completedCount = data.completedCount || 0;
+          const totalStudents = activeCount + completedCount;
+          const calculatedCompletionRate = totalStudents > 0 
+            ? Math.round((completedCount / totalStudents) * 100) 
+            : 0;
+  
+          // Update all stats in a single state update
           setQuizStats({
-            totalStudents: data.totalStudents || 0,
-            completedAttempts: data.completedAttempts || 0,
+            totalStudents: totalStudents,
+            completedAttempts: completedCount,
             averageScore: data.averageScore || 0,
             highestScore: data.highestScore || 0,
-            completionRate: data.completionRate || 0
+            completionRate: data.completionRate || calculatedCompletionRate,
+            activeStudents: activeCount
           });
         }
       } catch (error) {
         console.error("Failed to fetch quiz statistics:", error);
+      } finally {
+        setIsStatsLoading(false);
       }
     };
-
+  
     fetchQuizStats();
+    
+    // Set up interval to refresh stats every 10 seconds for live updates
+    const statsInterval = setInterval(fetchQuizStats, 10000);
+    
+    return () => {
+      clearInterval(statsInterval);
+    };
   }, [quiz]);
 
   const handleGoBack = () => {
     router.push('/dashboard');
   };
-  useEffect(() => {
-    if (admin?.name) {
-      setName(admin.name);
-    }
-  }, [admin]);
+
   const handleDownloadExcel = async () => {
     if (!quiz) {
       console.error('Quiz data is not available');
@@ -186,7 +221,7 @@ export default function ViewQuiz() {
   };
 
   const handleShareQuiz = () => {
-    const quizUrl = `http://localhost:3001/signin/${id}`;
+    const quizUrl = `http://localhost:3001/signin/${quiz._id}`;
     navigator.clipboard.writeText(quizUrl)
       .then(() => {
         // You would use your toast system here
@@ -197,7 +232,7 @@ export default function ViewQuiz() {
       });
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string | undefined): string => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -207,20 +242,26 @@ export default function ViewQuiz() {
     });
   };
 
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty?.toLowerCase()) {
-      case 'easy': return 'bg-green-100 text-green-700 border-green-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'hard': return 'bg-red-100 text-red-700 border-red-200';
-      default: return 'bg-blue-100 text-blue-700 border-blue-200';
-    }
+  interface DifficultyColors {
+    [key: string]: string;
+  }
+
+  const getDifficultyColor = (difficulty: string | undefined): string => {
+    const difficultyColors: DifficultyColors = {
+      easy: 'bg-green-100 text-green-700 border-green-200',
+      medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+      hard: 'bg-red-100 text-red-700 border-red-200',
+    };
+
+    return difficultyColors[difficulty?.toLowerCase() || ''] || 'bg-blue-100 text-blue-700 border-blue-200';
   };
 
+  // Loading skeleton for the entire component
   if (!quiz) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-        <Breadcrumbs items={[{ label: 'Loading Quiz...' }]} />
+          <Breadcrumbs items={[{ label: 'Loading Quiz...' }]} />
           <Card className="backdrop-blur-sm bg-white/80 border-green-200 shadow-lg">
             <CardHeader>
               <Skeleton className="h-8 w-[250px]" />
@@ -387,7 +428,32 @@ export default function ViewQuiz() {
 
             {/* Stats Summary */}
             <div className="px-8 pb-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Live Active Sessions Card */}
+                <motion.div
+                  whileHover={{ y: -5 }}
+                  transition={{ duration: 0.2 }}
+                  className="bg-white rounded-xl p-4 shadow-sm border border-yellow-100"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="bg-yellow-100 rounded-lg p-2">
+                      <Clock className="h-5 w-5 text-yellow-600" />
+                    </div>
+                    <Badge variant="outline" className="bg-yellow-50 text-yellow-600 flex items-center">
+                      Live
+                      {isStatsLoading && (
+                        <div className="ml-2 h-3 w-3 rounded-full bg-yellow-500 animate-pulse"></div>
+                      )}
+                    </Badge>
+                  </div>
+                  {isStatsLoading ? (
+                    <Skeleton className="h-8 w-16 mt-1" />
+                  ) : (
+                    <h4 className="text-2xl font-bold text-gray-800">{quizStats.activeStudents}</h4>
+                  )}
+                  <p className="text-sm text-gray-500">Currently taking</p>
+                </motion.div>
+
                 <motion.div
                   whileHover={{ y: -5 }}
                   transition={{ duration: 0.2 }}
@@ -397,9 +463,18 @@ export default function ViewQuiz() {
                     <div className="bg-green-100 rounded-lg p-2">
                       <User className="h-5 w-5 text-green-600" />
                     </div>
-                    <Badge variant="outline" className="bg-green-50 text-green-600">Students</Badge>
+                    <Badge variant="outline" className="bg-green-50 text-green-600 flex items-center">
+                      Students
+                      {isStatsLoading && (
+                        <div className="ml-2 h-3 w-3 rounded-full bg-green-500 animate-pulse"></div>
+                      )}
+                    </Badge>
                   </div>
-                  <h4 className="text-2xl font-bold text-gray-800">{quizStats.totalStudents}</h4>
+                  {isStatsLoading ? (
+                    <Skeleton className="h-8 w-16 mt-1" />
+                  ) : (
+                    <h4 className="text-2xl font-bold text-gray-800">{quizStats.totalStudents}</h4>
+                  )}
                   <p className="text-sm text-gray-500">Total students</p>
                 </motion.div>
 
@@ -412,40 +487,19 @@ export default function ViewQuiz() {
                     <div className="bg-blue-100 rounded-lg p-2">
                       <Check className="h-5 w-5 text-blue-600" />
                     </div>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-600">Completion</Badge>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-600 flex items-center">
+                      Completion
+                      {isStatsLoading && (
+                        <div className="ml-2 h-3 w-3 rounded-full bg-blue-500 animate-pulse"></div>
+                      )}
+                    </Badge>
                   </div>
-                  <h4 className="text-2xl font-bold text-gray-800">{quizStats.completedAttempts}</h4>
+                  {isStatsLoading ? (
+                    <Skeleton className="h-8 w-16 mt-1" />
+                  ) : (
+                    <h4 className="text-2xl font-bold text-gray-800">{quizStats.completedAttempts}</h4>
+                  )}
                   <p className="text-sm text-gray-500">Completed attempts</p>
-                </motion.div>
-
-                <motion.div
-                  whileHover={{ y: -5 }}
-                  transition={{ duration: 0.2 }}
-                  className="bg-white rounded-xl p-4 shadow-sm border border-green-100"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="bg-yellow-100 rounded-lg p-2">
-                      <BarChart3 className="h-5 w-5 text-yellow-600" />
-                    </div>
-                    <Badge variant="outline" className="bg-yellow-50 text-yellow-600">Average</Badge>
-                  </div>
-                  <h4 className="text-2xl font-bold text-gray-800">{quizStats.averageScore}%</h4>
-                  <p className="text-sm text-gray-500">Average score</p>
-                </motion.div>
-
-                <motion.div
-                  whileHover={{ y: -5 }}
-                  transition={{ duration: 0.2 }}
-                  className="bg-white rounded-xl p-4 shadow-sm border border-green-100"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="bg-purple-100 rounded-lg p-2">
-                      <HelpCircle className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <Badge variant="outline" className="bg-purple-50 text-purple-600">Top Score</Badge>
-                  </div>
-                  <h4 className="text-2xl font-bold text-gray-800">{quizStats.highestScore}%</h4>
-                  <p className="text-sm text-gray-500">Highest score</p>
                 </motion.div>
               </div>
             </div>
@@ -514,11 +568,23 @@ export default function ViewQuiz() {
                           <div className="space-y-2">
                             <div className="flex justify-between">
                               <span className="text-sm text-gray-500">Progress</span>
-                              <span className="text-sm font-medium">{quizStats.completionRate}%</span>
+                              {isStatsLoading ? (
+                                <Skeleton className="h-4 w-16" />
+                              ) : (
+                                <span className="text-sm font-medium">{quizStats.completionRate}%</span>
+                              )}
                             </div>
-                            <Progress value={quizStats.completionRate} className="h-2" />
+                            {isStatsLoading ? (
+                              <Skeleton className="h-2 w-full" />
+                            ) : (
+                              <Progress value={quizStats.completionRate} className="h-2" />
+                            )}
                             <p className="text-sm text-gray-500 mt-2">
-                              {quizStats.completedAttempts} out of {quizStats.totalStudents} students have completed this quiz.
+                              {isStatsLoading ? (
+                                <Skeleton className="h-4 w-full" />
+                              ) : (
+                                `${quizStats.completedAttempts} out of ${quizStats.totalStudents} students have completed this quiz.`
+                              )}
                             </p>
                           </div>
                         </CardContent>
@@ -618,8 +684,8 @@ export default function ViewQuiz() {
                                     <div
                                       key={option._id}
                                       className={`p-2 rounded-md text-sm ${option.isCorrect
-                                          ? 'bg-green-50 text-green-700 border border-green-200'
-                                          : 'bg-gray-50 text-gray-600 border border-gray-200'
+                                        ? 'bg-green-50 text-green-700 border border-green-200'
+                                        : 'bg-gray-50 text-gray-600 border border-gray-200'
                                         }`}
                                     >
                                       {option.text}
@@ -658,7 +724,7 @@ export default function ViewQuiz() {
 
             <Separator className="bg-green-100 mt-6" />
 
-            
+
           </Card>
         </motion.div>
       </div>
