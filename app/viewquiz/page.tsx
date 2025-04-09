@@ -7,23 +7,23 @@ import { Button } from '@nextui-org/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/table';
 import { Separator } from '../components/ui/separator';
-import { 
-  Download, 
-  ArrowLeft, 
-  Eye, 
-  FileSpreadsheet, 
-  BookOpen, 
-  User, 
-  Calendar, 
-  Clock, 
-  Check, 
-  X, 
-  Share2, 
-  Printer, 
-  Info, 
-  HelpCircle, 
-  BarChart3, 
-  Loader, 
+import {
+  Download,
+  ArrowLeft,
+  Eye,
+  FileSpreadsheet,
+  BookOpen,
+  User,
+  Calendar,
+  Clock,
+  Check,
+  X,
+  Share2,
+  Printer,
+  Info,
+  HelpCircle,
+  BarChart3,
+  Loader,
   Shield,
   Bell,
   AlertTriangle,
@@ -46,6 +46,8 @@ interface Quiz {
   title: string;
   description: string;
   createdAt?: string;
+  startDate: string;
+  endDate: string;
   timeLimit?: number;
   authorName?: string;
   authorId?: string;
@@ -106,12 +108,12 @@ export default function ViewQuiz() {
     completionRate: 0,
     activeStudents: 0
   });
-  
+
   // Live violations state
   const [liveViolations, setLiveViolations] = useState<Violation[]>([]);
   const [isViolationsLoading, setIsViolationsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  
+
   useEffect(() => {
     if (admin?.name) {
       setName(admin.name);
@@ -121,9 +123,9 @@ export default function ViewQuiz() {
   // Function to fetch live violations
   const fetchLiveViolations = async () => {
     if (!quiz) return;
-    
+
     setIsViolationsLoading(true);
-    
+
     try {
       let apiUrl;
       if (typeof window !== 'undefined') {
@@ -131,14 +133,14 @@ export default function ViewQuiz() {
           ? 'http://localhost:4000'
           : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
       }
-      
+
       const token = localStorage.getItem('token');
       const response = await fetch(`${apiUrl}/api/v1/violations/${quiz._id}/live?timeWindow=30`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setLiveViolations(data.violations);
@@ -158,7 +160,7 @@ export default function ViewQuiz() {
       if (!quiz) return;
       
       setIsStatsLoading(true);
-  
+    
       try {
         let apiUrl;
         if (typeof window !== 'undefined') {
@@ -166,50 +168,71 @@ export default function ViewQuiz() {
             ? 'http://localhost:4000'
             : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
         }
-  
+    
         // Use the endpoint that doesn't require authorization
         const response = await fetch(`${apiUrl}/api/v1/stats/${quiz._id}`);
-  
+    
         if (response.ok) {
           const data = await response.json();
+          console.log("Stats API response:", data);
           
-          // Consistent calculation of total students and completion rate
+          // Extract exactly what the API provides
           const activeCount = data.activeCount || 0;
           const completedCount = data.completedCount || 0;
+          
+          // Calculate the rest ourselves
           const totalStudents = activeCount + completedCount;
-          const calculatedCompletionRate = totalStudents > 0 
+          const completionRate = totalStudents > 0 
             ? Math.round((completedCount / totalStudents) * 100) 
             : 0;
-  
-          // Update all stats in a single state update
+    
+          // Update stats with what we have and calculated values
           setQuizStats({
             totalStudents: totalStudents,
             completedAttempts: completedCount,
-            averageScore: data.averageScore || 0,
-            highestScore: data.highestScore || 0,
-            completionRate: data.completionRate || calculatedCompletionRate,
+            averageScore: 0, // We don't have this data from the API
+            highestScore: 0, // We don't have this data from the API
+            completionRate: completionRate,
             activeStudents: activeCount
+          });
+        } else {
+          console.error("Failed to fetch stats, API returned status:", response.status);
+          setQuizStats({
+            totalStudents: 0,
+            completedAttempts: 0,
+            averageScore: 0,
+            highestScore: 0,
+            completionRate: 0,
+            activeStudents: 0
           });
         }
       } catch (error) {
-        console.error("Failed to fetch quiz statistics:", error);
+        console.error("Error fetching quiz statistics:", error);
+        setQuizStats({
+          totalStudents: 0,
+          completedAttempts: 0,
+          averageScore: 0,
+          highestScore: 0,
+          completionRate: 0,
+          activeStudents: 0
+        });
       } finally {
         setIsStatsLoading(false);
       }
     };
-    
+
     const fetchData = async () => {
       await fetchQuizStats();
       if (activeTab === 'monitor') {
         await fetchLiveViolations();
       }
     };
-  
+
     fetchData();
-    
+
     // Set up interval to refresh data every 10 seconds for live updates
     const refreshInterval = setInterval(fetchData, 10000);
-    
+
     return () => {
       clearInterval(refreshInterval);
     };
@@ -348,7 +371,7 @@ export default function ViewQuiz() {
   };
 
   // Helper functions for violations
-  
+
   // Group violations by student
   const groupViolationsByStudent = (violations: Violation[]) => {
     return violations.reduce((acc: any, violation) => {
@@ -363,7 +386,7 @@ export default function ViewQuiz() {
       return acc;
     }, {});
   };
-  
+
   // Get most common violation type
   const getMostCommonViolationType = (violations: Violation[]) => {
     const violationTypes = violations.map(v => v.violation.type);
@@ -371,12 +394,12 @@ export default function ViewQuiz() {
       acc[type] = (acc[type] || 0) + 1;
       return acc;
     }, {});
-    
+
     if (Object.keys(counts).length === 0) return null;
-    
+
     return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
   };
-  
+
   const mostCommonType = getMostCommonViolationType(liveViolations);
   const groupedViolations = groupViolationsByStudent(liveViolations);
   const uniqueStudentCount = Object.keys(groupedViolations).length;
@@ -550,7 +573,163 @@ export default function ViewQuiz() {
                 </div>
               </div>
             </div>
+            {/* Add this component below the profile section and above the Stats Summary in ViewQuiz.tsx */}
+            {/* Place it inside your main content area, around line ~450 */}
 
+            {/* Quiz Status Banner */}
+            <div className="px-8 pb-6">
+              <div className={`rounded-xl p-6 border shadow-sm flex items-center justify-between ${new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate)
+                ? 'bg-green-50 border-green-300'
+                : new Date() < new Date(quiz.startDate)
+                  ? 'bg-blue-50 border-blue-200'
+                  : 'bg-gray-50 border-gray-200'
+                }`}>
+                <div className="flex items-center gap-4">
+                  <div className={`rounded-full p-3 ${new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate)
+                    ? 'bg-green-100'
+                    : new Date() < new Date(quiz.startDate)
+                      ? 'bg-blue-100'
+                      : 'bg-gray-100'
+                    }`}>
+                    {new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate) && (
+                      <div className="relative">
+                        <Clock className={`h-6 w-6 text-green-600`} />
+                        <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-500 animate-pulse"></span>
+                      </div>
+                    )}
+                    {new Date() < new Date(quiz.startDate) && (
+                      <Calendar className="h-6 w-6 text-blue-600" />
+                    )}
+                    {new Date() > new Date(quiz.endDate) && (
+                      <Check className="h-6 w-6 text-gray-600" />
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-semibold">
+                        {new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate)
+                          ? 'Quiz is LIVE'
+                          : new Date() < new Date(quiz.startDate)
+                            ? 'Quiz is Upcoming'
+                            : 'Quiz is Completed'}
+                      </h3>
+                      <Badge className={`
+            ${new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate)
+                          ? 'bg-green-100 text-green-700 border-green-200'
+                          : new Date() < new Date(quiz.startDate)
+                            ? 'bg-blue-100 text-blue-700 border-blue-200'
+                            : 'bg-gray-100 text-gray-700 border-gray-200'
+                        }
+          `}>
+                        {new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate)
+                          ? 'Active Now'
+                          : new Date() < new Date(quiz.startDate)
+                            ? 'Scheduled'
+                            : 'Ended'}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center gap-6 mt-2 text-sm">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <span>
+                          <span className="font-medium">Start:</span> {formatDate(quiz.startDate)}
+                          {quiz.startDate && new Date(quiz.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <span>
+                          <span className="font-medium">End:</span> {formatDate(quiz.endDate)}
+                          {quiz.endDate && new Date(quiz.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+
+                      {new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate) && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4 text-green-600" />
+                          <span className="text-green-600 font-medium">
+                            {(() => {
+                              const now = new Date();
+                              const end = new Date(quiz.endDate);
+                              const diffMs = end.getTime() - now.getTime();
+                              const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+                              const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                              return `${diffHrs}h ${diffMins}m remaining`;
+                            })()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  {new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate) && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="border-green-200 bg-white text-green-700 hover:bg-green-50"
+                            onClick={handleShareQuiz}
+                          >
+                            <Share2 className="h-4 w-4 mr-2" />
+                            Share Now
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Share this quiz with students</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+
+                  {new Date() < new Date(quiz.startDate) && (
+                    <div className="text-blue-600 font-medium text-right">
+                      Starts in {(() => {
+                        const now = new Date();
+                        const start = new Date(quiz.startDate);
+                        const diffMs = start.getTime() - now.getTime();
+                        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                        const diffHrs = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+                        if (diffDays > 0) {
+                          return `${diffDays}d ${diffHrs}h`;
+                        } else {
+                          return `${diffHrs}h ${diffMins}m`;
+                        }
+                      })()}
+                    </div>
+                  )}
+
+                  {new Date() > new Date(quiz.endDate) && (
+                    <Badge variant="outline" className="bg-gray-50 text-gray-600">
+                      Ended {(() => {
+                        const now = new Date();
+                        const end = new Date(quiz.endDate);
+                        const diffMs = now.getTime() - end.getTime();
+                        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+                        if (diffDays === 0) {
+                          return 'today';
+                        } else if (diffDays === 1) {
+                          return 'yesterday';
+                        } else if (diffDays < 7) {
+                          return `${diffDays} days ago`;
+                        } else if (diffDays < 30) {
+                          return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
+                        } else {
+                          return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
+                        }
+                      })()}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
             {/* Stats Summary */}
             <div className="px-8 pb-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -837,7 +1016,7 @@ export default function ViewQuiz() {
                         )}
                       </Badge>
                     </div>
-                    
+
                     {/* Monitoring Stats */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                       <Card className="border border-amber-200 bg-white shadow-sm">
@@ -858,7 +1037,7 @@ export default function ViewQuiz() {
                           </div>
                         </CardContent>
                       </Card>
-                      
+
                       <Card className="border border-amber-200 bg-white shadow-sm">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between mb-2">
@@ -877,7 +1056,7 @@ export default function ViewQuiz() {
                           </div>
                         </CardContent>
                       </Card>
-                      
+
                       <Card className="border border-amber-200 bg-white shadow-sm">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between mb-2">
@@ -898,7 +1077,7 @@ export default function ViewQuiz() {
                         </CardContent>
                       </Card>
                     </div>
-                    
+
                     {/* Students with Violations List */}
                     <Card className="border border-amber-200 shadow-sm mb-6">
                       <CardHeader className="pb-2">
@@ -929,9 +1108,20 @@ export default function ViewQuiz() {
                                         </Avatar>
                                         <div>
                                           <h4 className="font-medium text-gray-800">{data.student.name}</h4>
-                                          <p className="text-sm text-gray-500">{data.student.email || data.student.registrationNumber || `ID: ${data.student._id.substring(0, 8)}...`}</p>
+                                          <div className="flex flex-col text-sm">
+                                            {data.student.registrationNumber && (
+                                              <span className="text-amber-600 font-medium">Reg: {data.student.registrationNumber}</span>
+                                            )}
+                                            {data.student.email && (
+                                              <span className="text-gray-500">{data.student.email}</span>
+                                            )}
+                                            {!data.student.email && !data.student.registrationNumber && (
+                                              <span className="text-gray-500">ID: {data.student._id.substring(0, 8)}...</span>
+                                            )}
+                                          </div>
                                         </div>
                                       </div>
+
                                       <div className="flex items-center gap-2">
                                         <Badge variant="outline" className="bg-amber-50 text-amber-600">
                                           {data.violations.length} Violations
@@ -951,7 +1141,7 @@ export default function ViewQuiz() {
                                           </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                          {data.violations.sort((a: Violation, b: Violation) => 
+                                          {data.violations.sort((a: Violation, b: Violation) =>
                                             new Date(b.violation.timestamp).getTime() - new Date(a.violation.timestamp).getTime()
                                           ).map((violation: Violation, vIndex: number) => (
                                             <TableRow key={vIndex}>
@@ -991,10 +1181,10 @@ export default function ViewQuiz() {
                         </ScrollArea>
                       </CardContent>
                     </Card>
-                    
+
                     <div className="flex justify-end">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={fetchLiveViolations}
                         className="border-amber-200 text-amber-700 hover:bg-amber-50"
                       >
