@@ -211,7 +211,7 @@ export default function ViewEssayResult() {
   const error = resultsError || violationsError;
 
   const handleGoBack = () => {
-    router.push('/viewEssay');
+    router.push('/viewessay');
   };
 
   const handleDownloadExcel = async () => {
@@ -345,7 +345,7 @@ export default function ViewEssayResult() {
         >
           {essay && (
             <Breadcrumbs items={[
-              { label: essay.title, href: '/viewEssay' },
+              { label: essay.title, href: '/viewessay' },
               { label: 'Results' }
             ]} />
           )}
