@@ -376,7 +376,7 @@ export default function Page() {
                 >
                     <Breadcrumbs
                         items={[
-                            { label: essay?.title || 'Essay', href: '/viewEssay' },
+                            { label: essay?.title || 'Essay', href: '/viewessay' },
                             { label: 'Results', href: `/viewEssayResult/${essay?._id || id}` }, // Note: changed to viewEssayResult
                             { label: studentDetails.registrationNumber || `${studentDetails.name}` }
                         ]}
@@ -437,7 +437,7 @@ export default function Page() {
                                             Essay Performance
                                         </h3>
                                         <Badge variant="outline" className={`${getScoreBadge(essayResults.score)} text-sm px-3 py-1`}>
-                                            Score: {essayResults.score.toFixed(2)}/100
+                                            Score: {(parseFloat(essayResults.score.toFixed(2)) * 100)}/100
                                         </Badge>
                                     </div>
 
