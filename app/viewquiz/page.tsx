@@ -7,7 +7,28 @@ import { Button } from '@nextui-org/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/table';
 import { Separator } from '../components/ui/separator';
-import { Download, ArrowLeft, Eye, FileSpreadsheet, BookOpen, User, Calendar, Clock, Check, X, Share2, Printer, Info, HelpCircle, BarChart3, Loader } from 'lucide-react';
+import { 
+  Download, 
+  ArrowLeft, 
+  Eye, 
+  FileSpreadsheet, 
+  BookOpen, 
+  User, 
+  Calendar, 
+  Clock, 
+  Check, 
+  X, 
+  Share2, 
+  Printer, 
+  Info, 
+  HelpCircle, 
+  BarChart3, 
+  Loader, 
+  Shield,
+  Bell,
+  AlertTriangle,
+  ChevronDown
+} from 'lucide-react';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { Skeleton } from '../components/ui/skeleton';
 import { Badge } from '../components/ui/badge';
@@ -18,6 +39,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../com
 import { motion } from "framer-motion";
 import { useAdmin } from '../context/AdminContext';
 import { Breadcrumbs } from '../components/ui/Breadcrumbs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible";
 
 interface Quiz {
   _id: string;
@@ -50,6 +72,24 @@ interface QuizStats {
   activeStudents: number;
 }
 
+interface Violation {
+  _id: string;
+  studentId: {
+    _id: string;
+    name: string;
+    email?: string;
+    registrationNumber?: string;
+  };
+  quizId: string;
+  violation: {
+    type: string;
+    timestamp: string;
+    count?: number;
+    key?: string;
+  };
+  createdAt: string;
+}
+
 export default function ViewQuiz() {
   const router = useRouter();
   const { admin } = useAdmin();
@@ -66,14 +106,52 @@ export default function ViewQuiz() {
     completionRate: 0,
     activeStudents: 0
   });
-
+  
+  // Live violations state
+  const [liveViolations, setLiveViolations] = useState<Violation[]>([]);
+  const [isViolationsLoading, setIsViolationsLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  
   useEffect(() => {
     if (admin?.name) {
       setName(admin.name);
     }
   }, [admin]);
 
-  // Consolidated useEffect for fetching quiz statistics
+  // Function to fetch live violations
+  const fetchLiveViolations = async () => {
+    if (!quiz) return;
+    
+    setIsViolationsLoading(true);
+    
+    try {
+      let apiUrl;
+      if (typeof window !== 'undefined') {
+        apiUrl = window.location.hostname === 'localhost'
+          ? 'http://localhost:4000'
+          : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+      }
+      
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/api/v1/violations/${quiz._id}/live?timeWindow=30`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setLiveViolations(data.violations);
+        setLastUpdated(new Date());
+      }
+    } catch (error) {
+      console.error("Failed to fetch live violations:", error);
+    } finally {
+      setIsViolationsLoading(false);
+    }
+  };
+
+  // Consolidated useEffect for fetching quiz statistics and violations
   useEffect(() => {
     // Fetch quiz statistics
     const fetchQuizStats = async () => {
@@ -94,7 +172,6 @@ export default function ViewQuiz() {
   
         if (response.ok) {
           const data = await response.json();
-          console.log("Quiz stats data:", data);
           
           // Consistent calculation of total students and completion rate
           const activeCount = data.activeCount || 0;
@@ -120,16 +197,30 @@ export default function ViewQuiz() {
         setIsStatsLoading(false);
       }
     };
-  
-    fetchQuizStats();
     
-    // Set up interval to refresh stats every 10 seconds for live updates
-    const statsInterval = setInterval(fetchQuizStats, 10000);
+    const fetchData = async () => {
+      await fetchQuizStats();
+      if (activeTab === 'monitor') {
+        await fetchLiveViolations();
+      }
+    };
+  
+    fetchData();
+    
+    // Set up interval to refresh data every 10 seconds for live updates
+    const refreshInterval = setInterval(fetchData, 10000);
     
     return () => {
-      clearInterval(statsInterval);
+      clearInterval(refreshInterval);
     };
-  }, [quiz]);
+  }, [quiz, activeTab]);
+
+  // Also fetch violations when switching to the monitor tab
+  useEffect(() => {
+    if (activeTab === 'monitor' && quiz) {
+      fetchLiveViolations();
+    }
+  }, [activeTab, quiz]);
 
   const handleGoBack = () => {
     router.push('/dashboard');
@@ -255,6 +346,40 @@ export default function ViewQuiz() {
 
     return difficultyColors[difficulty?.toLowerCase() || ''] || 'bg-blue-100 text-blue-700 border-blue-200';
   };
+
+  // Helper functions for violations
+  
+  // Group violations by student
+  const groupViolationsByStudent = (violations: Violation[]) => {
+    return violations.reduce((acc: any, violation) => {
+      const studentId = violation.studentId._id;
+      if (!acc[studentId]) {
+        acc[studentId] = {
+          student: violation.studentId,
+          violations: []
+        };
+      }
+      acc[studentId].violations.push(violation);
+      return acc;
+    }, {});
+  };
+  
+  // Get most common violation type
+  const getMostCommonViolationType = (violations: Violation[]) => {
+    const violationTypes = violations.map(v => v.violation.type);
+    const counts = violationTypes.reduce((acc: any, type) => {
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {});
+    
+    if (Object.keys(counts).length === 0) return null;
+    
+    return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+  };
+  
+  const mostCommonType = getMostCommonViolationType(liveViolations);
+  const groupedViolations = groupViolationsByStudent(liveViolations);
+  const uniqueStudentCount = Object.keys(groupedViolations).length;
 
   // Loading skeleton for the entire component
   if (!quiz) {
@@ -509,7 +634,7 @@ export default function ViewQuiz() {
             {/* Tabs Section */}
             <div className="px-8 pt-6">
               <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
-                <TabsList className="grid grid-cols-2 lg:grid-cols-3 mb-6">
+                <TabsList className="grid grid-cols-2 lg:grid-cols-4 mb-6">
                   <TabsTrigger value="overview" className="data-[state=active]:bg-green-100 data-[state=active]:text-green-700">
                     <Info className="h-4 w-4 mr-2" />
                     Overview
@@ -517,6 +642,10 @@ export default function ViewQuiz() {
                   <TabsTrigger value="questions" className="data-[state=active]:bg-green-100 data-[state=active]:text-green-700">
                     <BookOpen className="h-4 w-4 mr-2" />
                     Questions
+                  </TabsTrigger>
+                  <TabsTrigger value="monitor" className="data-[state=active]:bg-green-100 data-[state=active]:text-green-700">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Monitor
                   </TabsTrigger>
                   <TabsTrigger value="results" className="data-[state=active]:bg-green-100 data-[state=active]:text-green-700">
                     <BarChart3 className="h-4 w-4 mr-2" />
@@ -598,22 +727,6 @@ export default function ViewQuiz() {
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-2">
-                            <Button
-                              variant="ghost"
-                              className="w-full justify-start border border-green-200 hover:bg-green-100 text-green-700 mb-2"
-                              onClick={() => router.push(`/edit/${quiz._id}`)}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              Edit Quiz
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              className="w-full justify-start border border-green-200 hover:bg-green-100 text-green-700 mb-2"
-                              onClick={() => router.push(`/viewResult/${quiz._id}`)}
-                            >
-                              <BarChart3 className="h-4 w-4 mr-2" />
-                              View Results
-                            </Button>
                             <Button
                               variant="ghost"
                               className="w-full justify-start border border-green-200 hover:bg-green-100 text-green-700 mb-2"
@@ -701,6 +814,193 @@ export default function ViewQuiz() {
                         </TableBody>
                       </Table>
                     </ScrollArea>
+                  </CardContent>
+                </TabsContent>
+
+                {/* Monitor Tab - New Addition */}
+                <TabsContent value="monitor" className="mt-0">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                        <Shield className="h-5 w-5 text-amber-600" />
+                        Live Student Monitoring
+                      </h3>
+                      <Badge variant="outline" className="bg-amber-50 text-amber-600 flex items-center gap-1">
+                        <Bell className="h-4 w-4" />
+                        {isViolationsLoading ? (
+                          <span className="flex items-center">
+                            Updating
+                            <span className="ml-2 h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+                          </span>
+                        ) : (
+                          <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
+                        )}
+                      </Badge>
+                    </div>
+                    
+                    {/* Monitoring Stats */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                      <Card className="border border-amber-200 bg-white shadow-sm">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-sm font-medium text-gray-600">Active Violations</h4>
+                            <Badge variant="outline" className="bg-amber-50 text-amber-600">
+                              {liveViolations.length}
+                            </Badge>
+                          </div>
+                          <div className="mt-2">
+                            <div className="text-2xl font-bold text-amber-600">
+                              {liveViolations.length}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              across {uniqueStudentCount} students
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="border border-amber-200 bg-white shadow-sm">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-sm font-medium text-gray-600">Students with Violations</h4>
+                            <Badge variant="outline" className="bg-amber-50 text-amber-600">
+                              {uniqueStudentCount}
+                            </Badge>
+                          </div>
+                          <div className="mt-2">
+                            <div className="text-2xl font-bold text-amber-600">
+                              {quizStats.activeStudents > 0 ? Math.round((uniqueStudentCount / quizStats.activeStudents) * 100) : 0}%
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              of active students
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="border border-amber-200 bg-white shadow-sm">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-sm font-medium text-gray-600">Most Common Violation</h4>
+                          </div>
+                          <div className="mt-2">
+                            {mostCommonType ? (
+                              <>
+                                <div className="text-lg font-bold text-gray-800">{mostCommonType}</div>
+                                <div className="text-sm text-gray-500">
+                                  {liveViolations.filter(v => v.violation.type === mostCommonType).length} occurrences
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-gray-500">No violations detected</div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    {/* Students with Violations List */}
+                    <Card className="border border-amber-200 shadow-sm mb-6">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-amber-600" />
+                          Students with Active Violations
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ScrollArea className="h-[300px]">
+                          {Object.keys(groupedViolations).length === 0 ? (
+                            <div className="text-center py-8">
+                              <Shield className="mx-auto h-10 w-10 text-gray-300" />
+                              <p className="mt-2 text-gray-500">No violations detected</p>
+                            </div>
+                          ) : (
+                            Object.values(groupedViolations).map((data: any, index: number) => (
+                              <Collapsible key={data.student._id} className="mb-3">
+                                <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                                  <CollapsibleTrigger className="w-full">
+                                    <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50">
+                                      <div className="flex items-center gap-3">
+                                        <Avatar className="h-10 w-10 border border-gray-200">
+                                          <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${data.student.name}`} />
+                                          <AvatarFallback className="bg-amber-50 text-amber-600">
+                                            {data.student.name.charAt(0)}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                          <h4 className="font-medium text-gray-800">{data.student.name}</h4>
+                                          <p className="text-sm text-gray-500">{data.student.email || data.student.registrationNumber || `ID: ${data.student._id.substring(0, 8)}...`}</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="bg-amber-50 text-amber-600">
+                                          {data.violations.length} Violations
+                                        </Badge>
+                                        <ChevronDown className="h-5 w-5 text-gray-400" />
+                                      </div>
+                                    </div>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    <div className="border-t border-gray-200 p-4 bg-gray-50">
+                                      <Table>
+                                        <TableHeader>
+                                          <TableRow className="bg-gray-100">
+                                            <TableHead className="w-[180px]">Time</TableHead>
+                                            <TableHead>Type</TableHead>
+                                            <TableHead>Details</TableHead>
+                                          </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                          {data.violations.sort((a: Violation, b: Violation) => 
+                                            new Date(b.violation.timestamp).getTime() - new Date(a.violation.timestamp).getTime()
+                                          ).map((violation: Violation, vIndex: number) => (
+                                            <TableRow key={vIndex}>
+                                              <TableCell className="text-sm">
+                                                {new Date(violation.violation.timestamp).toLocaleTimeString()}
+                                              </TableCell>
+                                              <TableCell>
+                                                <Badge variant="outline" className="bg-amber-50 text-amber-600">
+                                                  {violation.violation.type}
+                                                </Badge>
+                                              </TableCell>
+                                              <TableCell className="text-sm">
+                                                {violation.violation.key && <span>Key: {violation.violation.key}</span>}
+                                                {violation.violation.count && <span>Count: {violation.violation.count}</span>}
+                                              </TableCell>
+                                            </TableRow>
+                                          ))}
+                                        </TableBody>
+                                      </Table>
+                                      <div className="mt-4 flex justify-end">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => router.push(`/viewResult/${quiz._id}/student/${data.student._id}`)}
+                                          className="text-xs border-amber-200 text-amber-700 hover:bg-amber-50"
+                                        >
+                                          <Eye className="h-3 w-3 mr-1" />
+                                          View Student
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </CollapsibleContent>
+                                </div>
+                              </Collapsible>
+                            ))
+                          )}
+                        </ScrollArea>
+                      </CardContent>
+                    </Card>
+                    
+                    <div className="flex justify-end">
+                      <Button 
+                        variant="outline" 
+                        onClick={fetchLiveViolations}
+                        className="border-amber-200 text-amber-700 hover:bg-amber-50"
+                      >
+                        Refresh Data
+                      </Button>
+                    </div>
                   </CardContent>
                 </TabsContent>
 
