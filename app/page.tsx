@@ -66,12 +66,12 @@ export default function Home() {
         return isValid;
     };
 
-    const handleChange = (e) => {
-        const { id, value } = e.target;
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target as HTMLInputElement;
         setFormData({ ...formData, [id]: value });
 
         // Clear error when user starts typing
-        if (errors[id]) {
+        if (id in errors) {
             setErrors({ ...errors, [id]: '' });
         }
     };
@@ -120,7 +120,9 @@ export default function Home() {
             }
         } catch (error) {
             console.error('Error during sign in:', error);
-            const errorMessage = error.response?.data?.message || 'Invalid email or password';
+            const errorMessage = axios.isAxiosError(error) && error.response?.data?.message
+                ? error.response.data.message
+                : 'Invalid email or password';
             toast.error(errorMessage);
         } finally {
             setIsLoading(false);
@@ -284,7 +286,7 @@ export default function Home() {
                         </div>
 
                         <div className="text-center mt-8">
-                            <span className="text-gray-500 text-sm">Don't have an account?</span>
+                            <span className="text-gray-500 text-sm">Don&apos;t have an account?</span>
                             <Button
                                 variant="link"
                                 className="text-green-600 hover:text-green-800 text-sm font-medium"

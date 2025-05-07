@@ -426,25 +426,25 @@ export default function ViewResult() {
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-3 h-3 rounded-full bg-green-500"></div>
                       <span className="text-sm text-gray-600">
-                        {quizResults.filter(r => (r.score / totalQuestions) * 100 >= 80).length} students scored 80% or higher
+                        {quizResults.filter((r: QuizResult): boolean => (r.score / totalQuestions) * 100 >= 80).length} students scored 80% or higher
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                       <span className="text-sm text-gray-600">
-                        {quizResults.filter(r => (r.score / totalQuestions) * 100 >= 60 && (r.score / totalQuestions) * 100 < 80).length} students scored 60-79%
+                        {quizResults.filter((r: QuizResult): boolean => (r.score / totalQuestions) * 100 >= 60 && (r.score / totalQuestions) * 100 < 80).length} students scored 60-79%
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-3 h-3 rounded-full bg-amber-500"></div>
                       <span className="text-sm text-gray-600">
-                        {quizResults.filter(r => (r.score / totalQuestions) * 100 >= 40 && (r.score / totalQuestions) * 100 < 60).length} students scored 40-59%
+                        {quizResults.filter((r: QuizResult): boolean => (r.score / totalQuestions) * 100 >= 40 && (r.score / totalQuestions) * 100 < 60).length} students scored 40-59%
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-red-500"></div>
                       <span className="text-sm text-gray-600">
-                        {quizResults.filter(r => (r.score / totalQuestions) * 100 < 40).length} students scored below 40%
+                        {quizResults.filter((r: QuizResult): boolean => (r.score / totalQuestions) * 100 < 40).length} students scored below 40%
                       </span>
                     </div>
                   </div>
@@ -456,7 +456,7 @@ export default function ViewResult() {
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-gray-600">Fastest</span>
                           <span className="font-medium text-green-600">
-                            {quizResults.length > 0 ? Math.min(...quizResults.map(r => r.timeTaken)).toFixed(1) : 0} min
+                            {quizResults.length > 0 ? Math.min(...quizResults.map((r: QuizResult): number => r.timeTaken)).toFixed(1) : 0} min
                           </span>
                         </div>
                         <Progress value={20} className="h-1" />
@@ -472,7 +472,7 @@ export default function ViewResult() {
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-gray-600">Slowest</span>
                           <span className="font-medium text-red-600">
-                            {quizResults.length > 0 ? Math.max(...quizResults.map(r => r.timeTaken)).toFixed(1) : 0} min
+                            {quizResults.length > 0 ? Math.max(...quizResults.map((r: QuizResult): number => r.timeTaken)).toFixed(1) : 0} min
                           </span>
                         </div>
                         <Progress value={80} className="h-1" />
@@ -495,7 +495,7 @@ export default function ViewResult() {
                           </p>
                           <p className="flex items-center gap-1">
                             <AlertTriangle size={14} className="text-amber-500" />
-                            {violationSummary.filter(v => v.totalViolations > 5).length} students require review
+                            {violationSummary.filter((v: ViolationSummary): any => v.totalViolations > 5).length} students require review
                           </p>
                         </div>
                       </>

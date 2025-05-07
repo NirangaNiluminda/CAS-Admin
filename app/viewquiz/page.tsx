@@ -51,7 +51,7 @@ interface Quiz {
   timeLimit?: number;
   authorName?: string;
   authorId?: string;
-  difficulty?: string;
+  difficulty: string;
   category?: string;
   totalAttempts?: number;
   averageScore?: number;
@@ -335,6 +335,7 @@ export default function ViewQuiz() {
   };
 
   const handleShareQuiz = () => {
+    if (!quiz) return;
     const quizUrl = `http://localhost:3001/signin/${quiz._id}`;
     navigator.clipboard.writeText(quizUrl)
       .then(() => {
@@ -671,7 +672,7 @@ export default function ViewQuiz() {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             className="border-green-200 bg-white text-green-700 hover:bg-green-50"
                             onClick={handleShareQuiz}
                           >
@@ -1163,7 +1164,7 @@ export default function ViewQuiz() {
                                       </Table>
                                       <div className="mt-4 flex justify-end">
                                         <Button
-                                          variant="outline"
+                                          variant="ghost"
                                           size="sm"
                                           onClick={() => router.push(`/viewResult/${quiz._id}/student/${data.student._id}`)}
                                           className="text-xs border-amber-200 text-amber-700 hover:bg-amber-50"
@@ -1184,7 +1185,7 @@ export default function ViewQuiz() {
 
                     <div className="flex justify-end">
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         onClick={fetchLiveViolations}
                         className="border-amber-200 text-amber-700 hover:bg-amber-50"
                       >
