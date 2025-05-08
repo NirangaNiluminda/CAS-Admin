@@ -10,7 +10,7 @@ import { Label } from "../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Loader2 } from "lucide-react";
 
-export default function ResetPassword() {
+export default function ResetPassword({}) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const email = searchParams.get('email');

@@ -42,6 +42,7 @@ export default function QuizForm() {
   const [mainEndTime, setMainEndTime] = useState('');
   const [startDate, setStartDate] = useState('');
   const [retryCount, setRetryCount] = useState(0);
+  const [intendedBatch, setIntendedBatch] = useState(''); // New state for intended batch
   const [maxRetries] = useState(3); // Set maximum retries
   const router = useRouter();
 
@@ -278,6 +279,7 @@ export default function QuizForm() {
           teacherId: string | undefined;
           startDate: any;
           endDate: any;
+          intendedBatch: number;
           guidelines: string[];
           questions?: Array<{
             questionText: string;
@@ -291,6 +293,7 @@ export default function QuizForm() {
             description,
             timeLimit: timeLimit,
             password,
+            intendedBatch: parseInt(intendedBatch) || 0, // Convert to number, default to 0 if parsing fails
             teacherId: admin?._id,
             startDate: formatDate(startDate),
             endDate: formatDate(mainEndTime), // Use `mainEndTime` as `endDate`
@@ -753,6 +756,21 @@ export default function QuizForm() {
               className="p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full md:w-1/3"
             />
             <p className="mt-1 text-sm text-gray-500">Students will need this password to access the assignment</p>
+          </div>
+
+          {/* Intended Batch */}
+          <div className='mt-8'>
+            <label className="flex items-center text-sm font-semibold mb-2 text-gray-700">
+              <ListChecks className="mr-2 h-4 w-4 text-blue-600" />
+              Intended Batch
+            </label>
+            <input
+              type="text"
+              placeholder="Enter intended batch (e.g., 2023-2024)"
+              value={intendedBatch}
+              onChange={(e) => setIntendedBatch(e.target.value)}
+              className="p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full md:w-1/3"
+            />
           </div>
 
           {/* Buttons */}
