@@ -423,25 +423,25 @@ export default function ViewEssayResult() {
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-3 h-3 rounded-full bg-green-500"></div>
                       <span className="text-sm text-gray-600">
-                        {essayResults.filter(r => r.score * 100 >= 80).length} students scored 80% or higher
+                        {essayResults.filter((r: EssayResult): boolean => r.score * 100 >= 80).length} students scored 80% or higher
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                       <span className="text-sm text-gray-600">
-                        {essayResults.filter(r => r.score * 100 >= 60 && r.score * 100 < 80).length} students scored 60-79%
+                        {essayResults.filter((r: EssayResult): boolean => r.score * 100 >= 60 && r.score * 100 < 80).length} students scored 60-79%
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-3 h-3 rounded-full bg-amber-500"></div>
                       <span className="text-sm text-gray-600">
-                        {essayResults.filter(r => r.score * 100 >= 40 && r.score * 100 < 60).length} students scored 40-59%
+                        {essayResults.filter((r: EssayResult): boolean => r.score * 100 >= 40 && r.score * 100 < 60).length} students scored 40-59%
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-red-500"></div>
                       <span className="text-sm text-gray-600">
-                        {essayResults.filter(r => r.score * 100 < 40).length} students scored below 40%
+                        {essayResults.filter((r: EssayResult): boolean => r.score * 100 < 40).length} students scored below 40%
                       </span>
                     </div>
                   </div>
@@ -453,7 +453,7 @@ export default function ViewEssayResult() {
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-gray-600">Fastest</span>
                           <span className="font-medium text-green-600">
-                            {essayResults.length > 0 ? Math.min(...essayResults.map(r => r.timeTaken)).toFixed(1) : 0} min
+                            {essayResults.length > 0 ? Math.min(...essayResults.map((r: EssayResult): number => r.timeTaken)).toFixed(1) : 0} min
                           </span>
                         </div>
                         <Progress value={20} className="h-1" />
@@ -469,7 +469,7 @@ export default function ViewEssayResult() {
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-gray-600">Slowest</span>
                           <span className="font-medium text-red-600">
-                            {essayResults.length > 0 ? Math.max(...essayResults.map(r => r.timeTaken)).toFixed(1) : 0} min
+                            {essayResults.length > 0 ? Math.max(...essayResults.map((r: EssayResult): number => r.timeTaken)).toFixed(1) : 0} min
                           </span>
                         </div>
                         <Progress value={80} className="h-1" />
@@ -492,7 +492,7 @@ export default function ViewEssayResult() {
                           </p>
                           <p className="flex items-center gap-1">
                             <AlertTriangle size={14} className="text-amber-500" />
-                            {violationSummary.filter(v => v.totalViolations > 5).length} students require review
+                            {violationSummary.filter((v:ViolationSummary) : any => v.totalViolations > 5).length} students require review
                           </p>
                         </div>
                       </>

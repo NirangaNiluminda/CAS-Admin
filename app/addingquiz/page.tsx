@@ -72,7 +72,7 @@ export default function QuizForm() {
   }, []);
 
   // Add a question to the list
-  const addQuestion = (afterIndex = null) => {
+  const addQuestion = (afterIndex: number | null | undefined = null) => {
     if (afterIndex === null) {
       // Add to the end (original behavior)
       setQuestions([
@@ -91,7 +91,13 @@ export default function QuizForm() {
     }
   };
 
-  const deleteQuestion = (index) => {
+  interface Question {
+    questionText: string;
+    answers: string[];
+    correct: boolean[];
+  }
+
+  const deleteQuestion = (index: number): void => {
     if (questions.length === 1) {
       setAlertMessage('You need at least one question');
       setShowAlert(true);
@@ -102,7 +108,7 @@ export default function QuizForm() {
       return;
     }
     
-    setQuestions((prev) => prev.filter((_, qIndex) => qIndex !== index));
+    setQuestions((prev: Question[]) => prev.filter((_, qIndex) => qIndex !== index));
     setAlertMessage(`Deleted question ${index + 1}`);
     setShowAlert(true);
     setTimeout(() => {
@@ -159,9 +165,27 @@ export default function QuizForm() {
   };
 
   // Function to handle API request with retry logic
-  const submitWithRetry = async (endpoint, data, token) => {
+  interface SubmitWithRetryParams {
+    endpoint: string;
+    data: Record<string, unknown>;
+    token: string;
+  }
+
+  interface SubmitWithRetryResponse {
+    data: Record<string, unknown>;
+    status: number;
+    statusText: string;
+    headers: Record<string, string>;
+    config: Record<string, unknown>;
+  }
+
+  const submitWithRetry = async (
+    endpoint: SubmitWithRetryParams['endpoint'], 
+    data: SubmitWithRetryParams['data'], 
+    token: SubmitWithRetryParams['token']
+  ): Promise<SubmitWithRetryResponse> => {
     let attempt = 0;
-    let lastError;
+    let lastError: unknown;
 
     while (attempt <= maxRetries) {
       try {
@@ -174,13 +198,13 @@ export default function QuizForm() {
         // Increase timeout for each retry
         const timeout = 20000 + (attempt * 10000); // 20s, 30s, 40s...
         
-        const timeoutPromise = new Promise((_, reject) => 
+        const timeoutPromise = new Promise<never>((_, reject) => 
           setTimeout(() => reject(new Error('Request timed out')), timeout)
         );
         
         // Try the request with the current timeout
         const response = await Promise.race([
-          axios.post(endpoint, data, {
+          axios.post<SubmitWithRetryResponse>(endpoint, data, {
             headers: {
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
@@ -190,13 +214,13 @@ export default function QuizForm() {
         ]);
         
         // If we get here, the request succeeded
-        return response;
+        return response.data;
       } catch (error) {
         lastError = error;
         console.error(`Attempt ${attempt + 1} failed:`, error);
         
         // If it's not a timeout, or we're on our last retry, break out of the loop
-        if (error.message !== 'Request timed out' || attempt === maxRetries) {
+        if ((error as Error).message !== 'Request timed out' || attempt === maxRetries) {
           break;
         }
         
@@ -238,7 +262,7 @@ export default function QuizForm() {
         }
 
         // Format dates
-        const formatDate = (dateString) => {
+        const formatDate = (dateString: any) => {
             if (!dateString.includes('Z')) {
                 return new Date(dateString).toISOString();
             }
@@ -246,10 +270,26 @@ export default function QuizForm() {
         };
 
         // Create the payload
-        const assignmentData = {
+        interface AssignmentData {
+          title: string;
+          description: string;
+          timeLimit: number;
+          password: string;
+          teacherId: string | undefined;
+          startDate: any;
+          endDate: any;
+          guidelines: string[];
+          questions?: Array<{
+            questionText: string;
+            options?: Array<{ text: string; isCorrect: boolean }>;
+            answer?: string; // Added for essay questions
+          }>;
+        }
+
+        const assignmentData: AssignmentData = {
             title,
             description,
-            timeLimit: parseInt(timeLimit, 10),
+            timeLimit: timeLimit,
             password,
             teacherId: admin?._id,
             startDate: formatDate(startDate),
@@ -272,7 +312,7 @@ export default function QuizForm() {
             const endpoint = `${apiUrl}/api/v1/create-assignment`;
             console.log("Sending to endpoint:", endpoint);
 
-            const response = await submitWithRetry(endpoint, assignmentData, token);
+            const response = await submitWithRetry(endpoint, assignmentData as unknown as Record<string, unknown>, token);
 
             if (response && response.data) {
                 setAlertMessage('Quiz created successfully!');
@@ -296,7 +336,7 @@ export default function QuizForm() {
             const endpoint = `${apiUrl}/api/v1/essay/create`;
             console.log("Sending to endpoint:", endpoint);
 
-            const response = await submitWithRetry(endpoint, assignmentData, token);
+            const response = await submitWithRetry(endpoint, assignmentData as unknown as Record<string, unknown>, token);
 
             if (response && response.data) {
                 setAlertMessage('Essay created successfully!');

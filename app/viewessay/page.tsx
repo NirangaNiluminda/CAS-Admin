@@ -586,7 +586,7 @@ export default function ViewEssay() {
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <Button
-                                                        variant="outline"
+                                                        variant="ghost"
                                                         className="border-green-200 bg-white text-green-700 hover:bg-green-50"
                                                         onClick={handleShareEssay}
                                                     >
@@ -1061,7 +1061,7 @@ export default function ViewEssay() {
                                                                             </Table>
                                                                             <div className="mt-4 flex justify-end">
                                                                                 <Button
-                                                                                    variant="outline"
+                                                                                    variant="ghost"
                                                                                     size="sm"
                                                                                     onClick={() => router.push(`/viewEssayResult/${essay._id}/student/${data.student._id}`)}
                                                                                     className="text-xs border-amber-200 text-amber-700 hover:bg-amber-50"
@@ -1082,7 +1082,7 @@ export default function ViewEssay() {
 
                                         <div className="flex justify-end">
                                             <Button
-                                                variant="outline"
+                                                variant="ghost"
                                                 onClick={fetchLiveViolations}
                                                 className="border-amber-200 text-amber-700 hover:bg-amber-50"
                                             >

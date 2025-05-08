@@ -712,7 +712,7 @@ export default function Page() {
                                                             )}
 
                                                             <div>
-                                                                <h5 className="text-sm font-medium text-gray-600 mb-2">Student's Answer:</h5>
+                                                                <h5 className="text-sm font-medium text-gray-600 mb-2">Student&apos;s Answer:</h5>
                                                                 <div className="p-4 bg-white rounded-md border border-gray-200 mb-4 whitespace-pre-wrap">
                                                                     {answer.studentAnswer}
                                                                 </div>
