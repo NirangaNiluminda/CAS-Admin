@@ -97,7 +97,7 @@ export default function QuizForm() {
     questionText: string;
     answers: string[];
     correct: boolean[];
-    pointsForQuestion?: number; // Optional property for points
+    pointsForQuestion: number; // Optional property for points
   }
 
   const deleteQuestion = (index: number): void => {
@@ -287,7 +287,7 @@ export default function QuizForm() {
           questionText: string;
           options?: Array<{ text: string; isCorrect: boolean }>;
           answer?: string; // Added for essay questions
-          pointsForQuestion?: number; // Added for points
+          pointsForQuestion: number; // Added for points
         }>;
       }
 
@@ -311,6 +311,7 @@ export default function QuizForm() {
             text: answer,
             isCorrect: q.correct[idx],
           })),
+          pointsForQuestion: q.pointsForQuestion, // Include points for question
         }));
 
         console.log("Sending MCQ data:", JSON.stringify(assignmentData, null, 2));
@@ -318,15 +319,19 @@ export default function QuizForm() {
         const endpoint = `${apiUrl}/api/v1/create-assignment`;
         console.log("Sending to endpoint:", endpoint);
 
-        const response = await submitWithRetry(endpoint, assignmentData as unknown as Record<string, unknown>, token);
-
-        if (response && response.data) {
-          setAlertMessage('Quiz created successfully!');
-          setShowAlert(true);
-          setTimeout(() => {
-            setShowAlert(false);
-            router.push('/dashboard');
-          }, 1500);
+        try {
+          const response = await submitWithRetry(endpoint, assignmentData as unknown as Record<string, unknown>, token);
+          console.log(response);
+          if (response.data.success) {
+            setAlertMessage('Quiz created successfully!');
+            setShowAlert(true);
+            setTimeout(() => {
+              setShowAlert(false);
+              router.push('/dashboard');
+            }, 1500);
+          }
+        } catch (error) {
+          throw error; // Rethrow the error to be caught in the outer catch block
         }
       } else {
         // For Essay
@@ -334,6 +339,7 @@ export default function QuizForm() {
           {
             questionText: essayQuestion.questionText,
             answer: essayQuestion.answer,
+            pointsForQuestion: 1, // Default value for essay question
           },
         ];
 
@@ -380,7 +386,7 @@ export default function QuizForm() {
   const setMarks = (value: string, questionIndex: number) => {
     const marks = parseInt(value);
     if (isNaN(marks) || marks < 0) return; // Validate input
-  
+
     setQuestions(prev => {
       const updated = [...prev];
       if (updated[questionIndex]) {
@@ -389,7 +395,7 @@ export default function QuizForm() {
       return updated;
     });
   };
-  
+
 
   return (
 
@@ -438,8 +444,8 @@ export default function QuizForm() {
                     <motion.button
                       whileHover={{ backgroundColor: '#e6f7ff' }}
                       className={`w-full text-left px-4 py-3 flex items-center space-x-2 ${type === 'mcq'
-                          ? 'bg-blue-100 text-blue-600 font-medium'
-                          : 'text-gray-700 bg-white'
+                        ? 'bg-blue-100 text-blue-600 font-medium'
+                        : 'text-gray-700 bg-white'
                         }`}
                       onClick={() => {
                         setType('mcq');
@@ -454,8 +460,8 @@ export default function QuizForm() {
                     <motion.button
                       whileHover={{ backgroundColor: '#e6f7ff' }}
                       className={`w-full text-left px-4 py-3 flex items-center space-x-2 ${type === 'essay'
-                          ? 'bg-blue-100 text-blue-600 font-medium'
-                          : 'text-gray-700 bg-white'
+                        ? 'bg-blue-100 text-blue-600 font-medium'
+                        : 'text-gray-700 bg-white'
                         }`}
                       onClick={() => {
                         setType('essay');
@@ -496,10 +502,10 @@ export default function QuizForm() {
                 )}
 
                 <p className={`text-lg ${alertMessage.includes('Error') || alertMessage.includes('timed out')
-                    ? 'text-red-600'
-                    : alertMessage.includes('Processing') || alertMessage.includes('Retrying')
-                      ? 'text-blue-600'
-                      : 'text-green-600'
+                  ? 'text-red-600'
+                  : alertMessage.includes('Processing') || alertMessage.includes('Retrying')
+                    ? 'text-blue-600'
+                    : 'text-green-600'
                   } font-medium mb-4 text-center`}>
                   {alertMessage}
                 </p>
@@ -720,7 +726,6 @@ export default function QuizForm() {
                         onChange={(e) => setMarks(e.target.value, qIndex)}
                         className="p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full md:w-1/3"
                       />
-                      <p className="mt-1 text-sm text-gray-500">Students will need this password to access the assignment</p>
                     </div>
 
                     {/* Add per-question "Add More Questions" button */}
