@@ -117,8 +117,8 @@ export default function ViewResult() {
 
       if (typeof window !== 'undefined') {
         apiUrl = window.location.hostname === 'localhost'
-          ? 'http://localhost:4000'
-          : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+          ? 'https://softbackend.run.place'
+          : 'https://softbackend.run.place';
       }
 
       try {
