@@ -174,7 +174,8 @@ export default function QuizForm() {
     token: string;
   }
 
-  interface SubmitWithRetryResponse {
+  type SubmitWithRetryResponse = {
+    [key: string]: unknown;
     data: Record<string, unknown>;
     status: number;
     statusText: string;
@@ -216,8 +217,17 @@ export default function QuizForm() {
           timeoutPromise
         ]);
 
-        // If we get here, the request succeeded
-        return response.data;
+        // Convert headers to Record<string, string> and return formatted response
+        return {
+          data: response.data,
+          status: response.status,
+          statusText: response.status.toString(),
+          headers: Object.entries(response.headers).reduce((acc, [key, value]) => {
+            acc[key] = value?.toString() || '';
+            return acc;
+          }, {} as Record<string, string>),
+          config: response.config as unknown as Record<string, unknown>
+        };
       } catch (error) {
         lastError = error;
         console.error(`Attempt ${attempt + 1} failed:`, error);
@@ -323,7 +333,7 @@ export default function QuizForm() {
         try {
           const response = await submitWithRetry(endpoint, assignmentData as unknown as Record<string, unknown>, token);
           console.log(response);
-          if (response.data.success) {
+          if (response.status === 201 || response.data.success) {
             setAlertMessage('Quiz created successfully!');
             setShowAlert(true);
             setTimeout(() => {
