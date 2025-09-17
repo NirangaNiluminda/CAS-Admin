@@ -33,7 +33,7 @@ export default function SignUp() {
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            setApiUrl(window.location.hostname === 'localhost' ? 'http://localhost:4000' : process.env.NEXT_PUBLIC_DEPLOYMENT_URL || 'https://softbackend.run.place');
+            setApiUrl(window.location.hostname === 'localhost' ? 'http://localhost:4000' : process.env.NEXT_PUBLIC_DEPLOYMENT_URL || 'https://cas-backend-vv78.onrender.com');
         }
     }, []);
 
