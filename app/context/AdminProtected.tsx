@@ -27,7 +27,7 @@ export default function AdminProtected({ children }: AdminProtectedProps) {
   }
 
   if (!admin) {
-    router.push('/signin'); // Redirect to signin page
+    router.push('/'); // Redirect to signin page
     return null;
   }
 
