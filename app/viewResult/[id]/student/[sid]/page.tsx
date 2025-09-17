@@ -117,8 +117,8 @@ export default function ViewResult() {
 
       if (typeof window !== 'undefined') {
         apiUrl = window.location.hostname === 'localhost'
-          ? 'http://localhost:4000'
-          : 'https://cas-backend-vv78.onrender.com';
+          ? 'https://softbackend.run.place'
+          : 'https://softbackend.run.place';
       }
 
       try {

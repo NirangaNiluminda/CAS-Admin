@@ -33,7 +33,7 @@ const Sidebar = () => {
             if (window.location.hostname === 'localhost') {
                 setApiUrl('http://localhost:4000');
             } else {
-                setApiUrl(process.env.NEXT_PUBLIC_API_URL || 'https://cas-backend-vv78.onrender.com');
+                setApiUrl(process.env.NEXT_PUBLIC_API_URL || 'https://softbackend.run.place');
             }
 
             const handleResize = () => {
