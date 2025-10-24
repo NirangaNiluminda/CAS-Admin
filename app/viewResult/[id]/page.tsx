@@ -39,6 +39,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../
 // Add SWR for data fetching and caching
 import useSWR from 'swr';
 import { Breadcrumbs } from '../../components/ui/Breadcrumbs';
+
 // Define interfaces
 interface QuizResult {
   _id: string;
@@ -52,25 +53,39 @@ interface QuizResult {
 }
 
 interface ViolationSummary {
-  _id: string;  // studentId
+  _id: string; // studentId
   studentName: string;
   totalViolations: number;
   violationTypes: string[];
 }
-// Create a custom fetcher function
+
+// Create a custom fetcher function with timeout
 const fetcher = async (url: string) => {
   const token = localStorage.getItem('token');
-  const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  console.log('Fetching with token:', token); // Debug token
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-  if (!response.ok) {
-    throw new Error(`Error: ${response.statusText}`);
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text(); // Log error details
+      console.error(`Fetch failed for ${url}: ${response.status} - ${errorText}`);
+      throw new Error(`Error: ${response.statusText} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log(`Fetched data from ${url}:`, data); // Debug response
+    return data;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return response.json();
 };
 
 // Create a function to get API URL
@@ -123,6 +138,7 @@ function formatDate(dateString: string) {
     minute: '2-digit'
   });
 }
+
 const StatsCard = ({ icon: Icon, label, value, bgColor, description }: {
   icon: any;
   label: string;
@@ -156,6 +172,7 @@ const SortIcon = ({ column, sortConfig }: {
     <SortDesc className="ml-1 w-4 h-4 text-green-600" />
   );
 };
+
 export default function ViewResult() {
   const { id } = useParams();
   const router = useRouter();
@@ -172,20 +189,18 @@ export default function ViewResult() {
     direction: 'asc' | 'desc';
   }>({ key: 'score', direction: 'desc' });
 
-  // Use SWR for caching and data fetching
-  const { data: resultsData, error: resultsError, isLoading: isResultsLoading } =
-    useSWR(`${apiUrl}/api/v1/results/${id}`, fetcher, {
-      revalidateOnFocus: false,
-      dedupingInterval: 60000,
-      focusThrottleInterval: 60000
-    });
+  // Use SWR for caching and data fetching with revalidation and retry
+  const { data: resultsData, error: resultsError, isLoading: isResultsLoading } = useSWR(
+    id ? `${apiUrl}/api/v1/results/${id}` : null,
+    fetcher,
+    { revalidateOnMount: true, revalidateIfStale: true, retry: 2, errorRetryInterval: 2000 } // Retry twice with 2s interval
+  );
 
-  const { data: violationsData, error: violationsError, isLoading: isViolationsLoading } =
-    useSWR(`${apiUrl}/api/v1/violations/${id}/summary`, fetcher, {
-      revalidateOnFocus: false,
-      dedupingInterval: 60000,
-      focusThrottleInterval: 60000
-    });
+  const { data: violationsData, error: violationsError, isLoading: isViolationsLoading } = useSWR(
+    id ? `${apiUrl}/api/v1/violations/${id}/summary` : null,
+    fetcher,
+    { revalidateOnMount: true, revalidateIfStale: true }
+  );
 
   // Derived state
   const quizResults = resultsData?.results || [];
@@ -203,7 +218,25 @@ export default function ViewResult() {
     : 0;
 
   const loading = isResultsLoading || isViolationsLoading;
+  const hasData = (resultsData?.results?.length > 0 || !resultsError) && (violationsData?.summary?.length >= 0 || !violationsError);
   const error = resultsError || violationsError;
+
+  // Debug logs
+  useEffect(() => {
+    console.log('ID:', id);
+    console.log('Quiz:', quiz);
+    console.log('Results Data:', resultsData);
+    console.log('Violations Data:', violationsData);
+    if (error) console.error('Error:', error);
+  }, [id, quiz, resultsData, violationsData, error]);
+
+  // Handle undefined ID
+  useEffect(() => {
+    if (!id) {
+      console.error('No quiz ID provided');
+      router.push('/dashboard');
+    }
+  }, [id, router]);
 
   // Set total questions when quiz data is available
   useEffect(() => {
@@ -280,15 +313,13 @@ export default function ViewResult() {
       }
       return 0;
     });
-  if (loading) {
+
+  if (loading || (!hasData && !error)) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col">
-        {/* Breadcrumbs container positioned at the top */}
         <div className="w-full max-w-4xl mx-auto pt-4 px-4">
           <Breadcrumbs items={[{ label: 'Loading Results...' }]} />
         </div>
-
-        {/* Loading spinner centered in the remaining space */}
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="inline-block w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mb-4"></div>
@@ -299,45 +330,40 @@ export default function ViewResult() {
     );
   }
 
-  if (error) {
+  if (error || (!hasData && !loading)) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col">
-        {/* Breadcrumbs container positioned at the top */}
         <div className="w-full max-w-4xl mx-auto pt-4 px-4">
           <Breadcrumbs items={[{ label: 'Error' }]} />
         </div>
-
-        {/* Card container centered in the remaining space */}
         <div className="flex-1 flex items-center justify-center">
-          <div className="max-w-4xl mx-auto px-4">
-            <Card className="w-full max-w-md shadow-lg border-red-200">
-              <CardHeader className="bg-red-50">
-                <CardTitle className="text-red-700 flex items-center gap-2">
-                  <AlertTriangle size={20} />
-                  Error Loading Data
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <p className="text-gray-600 mb-4">
-                  There was a problem fetching the quiz results. Please try again later.
-                </p>
-                <Button
-                  onClick={handleGoBack}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <ArrowLeft size={16} className="mr-2" />
-                  Return to Quizzes
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+          <Card className="w-full max-w-md shadow-lg border-red-200">
+            <CardHeader className="bg-red-50">
+              <CardTitle className="text-red-700 flex items-center gap-2">
+                <AlertTriangle size={20} />
+                Error Loading Data
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <p className="text-gray-600 mb-4">
+                There was a problem fetching the quiz results. Please try again later. Check console for details.
+              </p>
+              <Button
+                onClick={handleGoBack}
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                <ArrowLeft size={16} className="mr-2" />
+                Return to Quizzes
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
   }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-8 px-4 sm:px-6 lg:px-8">
-      {/* Decorative elements */}
       <div className="fixed top-20 right-20 w-64 h-64 bg-green-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
       <div className="fixed bottom-20 left-20 w-72 h-72 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
 
@@ -353,7 +379,6 @@ export default function ViewResult() {
               { label: 'Results' }
             ]} />
           )}
-          {/* Header with navigation */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Button
@@ -366,7 +391,7 @@ export default function ViewResult() {
               </Button>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{quiz?.title || 'Quiz Results'}</h1>
-                <p className="text-gray-500">Viewing quiz performance summary</p>
+                <p className="text-gray-600">Viewing quiz performance summary</p>
               </div>
             </div>
 
@@ -380,7 +405,6 @@ export default function ViewResult() {
             </Button>
           </div>
 
-          {/* Summary Cards */}
           <Card className="mb-8 overflow-hidden border-0 shadow-xl rounded-2xl bg-white">
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -414,7 +438,6 @@ export default function ViewResult() {
                 />
               </div>
 
-              {/* Performance Summary */}
               <div className="mt-8 bg-green-50 rounded-xl p-5 border border-green-200">
                 <h3 className="text-lg font-semibold text-green-700 mb-3 flex items-center gap-2">
                   <BarChart3 size={18} />
@@ -511,7 +534,6 @@ export default function ViewResult() {
             </CardContent>
           </Card>
 
-          {/* Results Table */}
           <Card className="shadow-xl border-0 overflow-hidden">
             <CardHeader className="p-6 bg-gradient-to-r from-green-50 to-green-100 border-b border-green-200">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -720,7 +742,6 @@ export default function ViewResult() {
             </CardFooter>
           </Card>
 
-          {/* Mobile Action Button for Export - Only visible on small screens */}
           <div className="md:hidden fixed bottom-6 right-6 z-20">
             <Button
               variant="default"

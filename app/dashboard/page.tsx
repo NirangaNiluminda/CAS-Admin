@@ -149,7 +149,7 @@ export default function Page() {
             if (data.success) {
                 if (type === 'quiz') {
                     setQuiz(data.assignment);
-                    router.push('/viewquiz');
+                    router.push(`/viewquiz/${id}`);  // <-- Change to this
                 } else {
                     setEssay(data.essayAssignment);
                     router.push('/viewessay');
@@ -243,7 +243,7 @@ export default function Page() {
 
     const createAssignment = async (assignmentData: any, maxRetries = 3) => {
         let retryCount = 0;
-        
+
         while (retryCount < maxRetries) {
             try {
                 // Determine API URL
@@ -252,11 +252,11 @@ export default function Page() {
                         ? 'http://localhost:4000'
                         : process.env.NEXT_PUBLIC_DEPLOYMENT_URL
                     : '';
-                
+
                 // Log what we're sending and where
                 console.log("Creating assignment with data:", JSON.stringify(assignmentData, null, 2));
                 console.log("Sending to endpoint:", `${apiUrl}/api/v1/create-assignment`);
-                
+
                 // Simple fetch without timeout wrapper for testing
                 const response = await fetch(`${apiUrl}/api/v1/create-assignment`, {
                     method: 'POST',
@@ -267,19 +267,19 @@ export default function Page() {
                     body: JSON.stringify(assignmentData),
                     // Don't set a timeout here to see if that's the issue
                 });
-                
+
                 // If response is not OK, throw error
                 if (!response.ok) {
                     throw new Error(`Server responded with status: ${response.status} - ${response.statusText}`);
                 }
-                
+
                 // Parse response data
                 let data;
                 try {
                     data = await response.json();
                 } catch (parseError) {
                     console.warn("Could not parse response as JSON:", parseError);
-                    
+
                     // If we can't parse JSON but response was OK, assume success
                     if (response.ok) {
                         toast.success('Assignment created successfully!');
@@ -289,7 +289,7 @@ export default function Page() {
                         throw new Error("Invalid response format from server");
                     }
                 }
-                
+
                 // Handle successful response
                 if (data.success) {
                     toast.success('Assignment created successfully!');
@@ -301,47 +301,47 @@ export default function Page() {
             } catch (error) {
                 // Increment retry counter
                 retryCount++;
-                
+
                 console.error(`Attempt ${retryCount} failed:`, error);
-                
+
                 // If we've reached max retries, show error and exit
                 if (retryCount >= maxRetries) {
                     toast.error('Failed to create assignment. Please try again.');
                     console.error('Error creating assignment after all retries:', error);
                     return false;
                 }
-                
+
                 // Wait before retrying (exponential backoff)
                 const backoffTime = 1000 * Math.pow(2, retryCount - 1);
                 console.log(`Retrying in ${backoffTime}ms...`);
                 await new Promise(resolve => setTimeout(resolve, backoffTime));
-                
+
                 toast.info(`Retrying submission (attempt ${retryCount + 1}/${maxRetries})...`);
             }
         }
-        
+
         return false; // Should not reach here, but just in case
     };
-    
+
     // Utility function to add timeout to fetch
     const fetchWithTimeout = (url: string | URL | Request, options: any, timeout = 30000) => { // Increased default timeout to 30 seconds
         return new Promise((resolve, reject) => {
             // Create an abort controller to handle timeouts
             const controller = new AbortController();
             const signal = controller.signal;
-            
+
             // Add the signal to options
             const enhancedOptions = {
                 ...options,
                 signal,
             };
-            
+
             // Set up the timeout
             const timer = setTimeout(() => {
                 controller.abort();
                 reject(new Error('Request timed out'));
             }, timeout);
-            
+
             fetch(url, enhancedOptions)
                 .then((response) => {
                     clearTimeout(timer);
