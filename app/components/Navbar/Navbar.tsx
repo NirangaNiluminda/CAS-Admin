@@ -17,7 +17,6 @@ const Sidebar = () => {
     const [hoverItem, setHoverItem] = useState<number | null>(null);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     
-    // Ref for the sidebar to detect clicks outside
     const sidebarRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -43,7 +42,6 @@ const Sidebar = () => {
                 }
             };
 
-            // Close sidebar when clicking outside (for mobile)
             const handleClickOutside = (event: MouseEvent) => {
                 if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node) && isMobile) {
                     setShowMobileMenu(false);
@@ -64,7 +62,6 @@ const Sidebar = () => {
     const handleLogout = async () => {
         setIsLoggingOut(true);
         
-        // Simulate a small delay for animation
         setTimeout(() => {
             localStorage.removeItem('token');
             sessionStorage.removeItem('token');
@@ -78,12 +75,10 @@ const Sidebar = () => {
         router.push('/profile');
     };
 
-    const isSignInPage = pathname === '/sign-in';
+    const isSignInPage = pathname === '/sign-in' || pathname === '/' || pathname === '/signup' || pathname === '/forgot-password';
     
-    // Don't render sidebar on sign-in page
     if (isSignInPage) return null;
     
-    // Get initials for avatar
     const getInitials = (fullName: string) => {
         if (!fullName) return 'U';
         return fullName
@@ -94,7 +89,6 @@ const Sidebar = () => {
             .slice(0, 2);
     };
 
-    // Navigation items with icons
     const navItems = [
         {
             name: 'Dashboard',
@@ -149,7 +143,6 @@ const Sidebar = () => {
 
     if (!admin) return null;
 
-    // Mobile menu toggle button with glass effect
     const MobileMenuButton = () => (
         <motion.button 
             onClick={() => setShowMobileMenu(!showMobileMenu)}
@@ -170,17 +163,11 @@ const Sidebar = () => {
         </motion.button>
     );
 
-    // Decorative elements
     const SidebarDecorations = () => (
         <>
-            {/* Subtle gradient background */}
             <div className="absolute inset-0 bg-gradient-to-b from-green-50/50 to-white/30 pointer-events-none"></div>
-            
-            {/* Subtle corner shapes */}
             <div className="absolute -top-20 -right-20 w-40 h-40 bg-green-100 opacity-5 rounded-full"></div>
             <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-100 opacity-5 rounded-full"></div>
-            
-            {/* Subtle pattern grid */}
             <div className="absolute inset-0 opacity-3 pointer-events-none">
                 {Array(6).fill(0).map((_, i) => (
                     <div 
@@ -202,7 +189,6 @@ const Sidebar = () => {
         <>
             <MobileMenuButton />
             
-            {/* Backdrop overlay for mobile */}
             <AnimatePresence>
                 {isMobile && showMobileMenu && (
                     <motion.div 
@@ -216,11 +202,10 @@ const Sidebar = () => {
                 )}
             </AnimatePresence>
             
-            {/* Sidebar */}
             <motion.div 
                 ref={sidebarRef}
                 className={`fixed inset-y-0 left-0 transform transition-all duration-300 ease-out z-40 ${
-                    isMobile ? (showMobileMenu ? 'translate-x-0' : '-translate-x-full') : (isCollapsed ? 'w-20' : 'w-72')
+                    isMobile ? (showMobileMenu ? 'translate-x-0 w-72' : '-translate-x-full w-72') : (isCollapsed ? 'w-20' : 'w-72')
                 }`}
                 initial={isMobile ? { x: "-100%" } : { x: 0 }}
                 animate={isMobile ? (showMobileMenu ? { x: 0 } : { x: "-100%" }) : { x: 0 }}
@@ -232,7 +217,6 @@ const Sidebar = () => {
                 <div className="relative h-full flex flex-col bg-white/90 backdrop-blur-lg border-r border-green-100 overflow-hidden">
                     <SidebarDecorations />
                     
-                    {/* Logo and collapse toggle */}
                     <div className="flex items-center justify-between h-16 px-5 py-6 border-b border-green-100 bg-white/50 backdrop-blur-md relative z-10">
                         {!isCollapsed && (
                             <motion.div 
@@ -281,7 +265,6 @@ const Sidebar = () => {
                         )}
                     </div>
 
-                    {/* User profile section */}
                     <motion.div 
                         className={`flex flex-col px-4 py-5 border-b border-green-100 relative z-10 ${isCollapsed ? 'items-center' : ''}`}
                         whileHover={{ backgroundColor: "rgba(240, 250, 240, 0.5)" }}
@@ -320,7 +303,6 @@ const Sidebar = () => {
                         </div>
                     </motion.div>
 
-                    {/* Navigation section */}
                     <div className="flex-grow overflow-y-auto py-6 relative z-10">
                         <ul className="space-y-2 px-3">
                             {navItems.map((item, index) => (
@@ -333,7 +315,10 @@ const Sidebar = () => {
                                     onHoverEnd={() => setHoverItem(null)}
                                 >
                                     <motion.button
-                                        onClick={() => router.push(item.path)}
+                                        onClick={() => {
+                                            router.push(item.path);
+                                            if (isMobile) setShowMobileMenu(false);
+                                        }}
                                         className={`relative flex items-center py-3 px-4 w-full rounded-xl cursor-pointer transition-all duration-200 ${
                                             pathname === item.path 
                                                 ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md' 
@@ -342,7 +327,6 @@ const Sidebar = () => {
                                         whileHover={isCollapsed ? { scale: 1.05 } : { scale: 1.01, x: 1 }}
                                         whileTap={{ scale: 0.98 }}
                                     >
-                                        {/* Active indicator */}
                                         {pathname === item.path && (
                                             <motion.div 
                                                 className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 rounded-r-full bg-white"
@@ -369,7 +353,6 @@ const Sidebar = () => {
                                             )}
                                         </AnimatePresence>
                                         
-                                        {/* Item description tooltip */}
                                         {isCollapsed && hoverItem === index && (
                                             <motion.div
                                                 initial={{ opacity: 0, x: 5 }}
@@ -390,7 +373,6 @@ const Sidebar = () => {
                         </ul>
                     </div>
 
-                    {/* Logout section */}
                     <div className="border-t border-green-100 p-4 backdrop-blur-sm bg-white/30 relative z-10">
                         <motion.button
                             onClick={handleLogout}
@@ -398,7 +380,6 @@ const Sidebar = () => {
                             whileHover={{ scale: 1.01 }}
                             whileTap={{ scale: 0.98 }}
                         >
-                            {/* Logout animation */}
                             {isLoggingOut && (
                                 <motion.div 
                                     className="absolute inset-0 bg-red-500"
@@ -440,11 +421,6 @@ const Sidebar = () => {
                     </div>
                 </div>
             </motion.div>
-
-            {/* Main content area */}
-            <div className={`transition-all duration-300 ease-out ${isMobile ? 'ml-0' : (isCollapsed ? 'ml-20' : 'ml-72')}`}>
-                {/* This is where your main content will go */}
-            </div>
         </>
     );
 };
