@@ -37,8 +37,14 @@ const Sidebar = () => {
             }
 
             const handleResize = () => {
-                setIsMobile(window.innerWidth < 768);
-                if (window.innerWidth >= 768) {
+                const width = window.innerWidth;
+                setIsMobile(width < 768);
+                if (width >= 1024) {
+                    setIsCollapsed(false); // Expanded on large screens
+                } else if (width >= 768) {
+                    setIsCollapsed(true); // Collapsed on medium screens
+                }
+                if (width >= 768) {
                     setShowMobileMenu(false);
                 }
             };
@@ -220,7 +226,7 @@ const Sidebar = () => {
             <motion.div 
                 ref={sidebarRef}
                 className={`fixed inset-y-0 left-0 transform transition-all duration-300 ease-out z-40 ${
-                    isMobile ? (showMobileMenu ? 'translate-x-0' : '-translate-x-full') : (isCollapsed ? 'w-20' : 'w-72')
+                    isMobile ? (showMobileMenu ? 'translate-x-0 w-72' : '-translate-x-full') : (isCollapsed ? 'w-20' : 'w-72')
                 }`}
                 initial={isMobile ? { x: "-100%" } : { x: 0 }}
                 animate={isMobile ? (showMobileMenu ? { x: 0 } : { x: "-100%" }) : { x: 0 }}
@@ -442,7 +448,7 @@ const Sidebar = () => {
             </motion.div>
 
             {/* Main content area */}
-            <div className={`transition-all duration-300 ease-out ${isMobile ? 'ml-0' : (isCollapsed ? 'ml-20' : 'ml-72')}`}>
+            <div className={`transition-all duration-300 ease-out ${isMobile ? (showMobileMenu ? 'ml-72' : 'ml-0') : (isCollapsed ? 'ml-20' : 'ml-72')}`}>
                 {/* This is where your main content will go */}
             </div>
         </>
