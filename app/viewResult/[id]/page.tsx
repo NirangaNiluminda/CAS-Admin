@@ -349,7 +349,7 @@ export default function ViewResult() {
                 There was a problem fetching the quiz results. Please try again later. Check console for details.
               </p>
               <Button
-                onClick={handleGoBack}
+                onClick={() => router.push(`/viewquiz/${id}`)}
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
               >
                 <ArrowLeft size={16} className="mr-2" />
@@ -375,7 +375,7 @@ export default function ViewResult() {
         >
           {quiz && (
             <Breadcrumbs items={[
-              { label: quiz.title, href: '/viewquiz' },
+              { label: quiz.title, href: `/viewquiz/${quiz?._id || id}` },
               { label: 'Results' }
             ]} />
           )}

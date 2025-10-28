@@ -371,7 +371,7 @@ export default function ViewResult() {
                 items={[
                   { label: quiz?.title || 'Quiz', href: `/viewquiz/${quiz?._id || id}` },
                   { label: 'Results', href: `/viewResult/${quiz?._id || id}` },
-                  { label: regNum || `Student ${sid.slice(0, 8)}` }
+                  { label: regNum || `${studentDetails.registrationNumber}` }
                 ]} 
               />
           {/* Header with navigation */}
@@ -416,7 +416,7 @@ export default function ViewResult() {
                   <h2 className="text-2xl font-bold mb-1">{studentDetails.name}</h2>
                   {studentDetails.email && <p className="text-green-100 mb-2">{studentDetails.email}</p>}
                   
-                  <Badge className="bg-white/20 backdrop-blur-sm text-white border-0 mt-2">Student ID: {(typeof studentDetails.id === 'string' ? studentDetails.id.substring(0, 8) : studentDetails.id)}...</Badge>
+                  <Badge className="bg-white/20 backdrop-blur-sm text-white border-0 mt-2">Student ID: {studentDetails.registrationNumber}</Badge>
                 </div>
                 
                 <div className="w-full md:w-2/3 p-8">
