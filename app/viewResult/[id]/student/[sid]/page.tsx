@@ -369,7 +369,7 @@ export default function ViewResult() {
         >
           <Breadcrumbs 
                 items={[
-                  { label: quiz?.title || 'Quiz', href: '/viewquiz' },
+                  { label: quiz?.title || 'Quiz', href: `/viewquiz/${quiz?._id || id}` },
                   { label: 'Results', href: `/viewResult/${quiz?._id || id}` },
                   { label: regNum || `Student ${sid.slice(0, 8)}` }
                 ]} 
