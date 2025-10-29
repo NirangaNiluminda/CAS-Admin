@@ -317,7 +317,7 @@ export default function ViewEssayResult() {
                   There was a problem fetching the essay results. Please try again later.
                 </p>
                 <Button
-                  onClick={() => router.push(`/viewResult/${id}`)}
+                  onClick={() => router.push(`/viewquiz/${id}`)}
                   className="w-full bg-green-600 hover:bg-green-700 text-white"
                 >
                   <ArrowLeft size={16} className="mr-2" />
