@@ -62,29 +62,71 @@ interface ViolationSummary {
 // Create a custom fetcher function with timeout
 const fetcher = async (url: string) => {
   const token = localStorage.getItem('token');
-  console.log('Fetching with token:', token); // Debug token
+  console.log('Fetching with token:', token ? 'Present' : 'Missing');
+
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds
 
   try {
     const response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
+      credentials: 'include',
       signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      const errorText = await response.text(); // Log error details
+      const errorText = await response.text();
       console.error(`Fetch failed for ${url}: ${response.status} - ${errorText}`);
-      throw new Error(`Error: ${response.statusText} - ${errorText}`);
+
+      // Handle token expiration
+      if (response.status === 401) {
+        const errorData = JSON.parse(errorText);
+        if (errorData.needsRefresh) {
+          // Try to refresh token
+          try {
+            const refreshResponse = await fetch(`${getApiUrl()}/api/v1/refreshAdminToken`, {
+              method: 'GET',
+              credentials: 'include',
+            });
+
+            if (refreshResponse.ok) {
+              const refreshData = await refreshResponse.json();
+              if (refreshData.accessToken) {
+                localStorage.setItem('token', refreshData.accessToken);
+                // Retry original request
+                return fetcher(url);
+              }
+            }
+          } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+            // Redirect to login
+            window.location.href = '/login';
+            throw new Error('Session expired. Please login again.');
+          }
+        }
+        throw new Error('Unauthorized. Please login again.');
+      }
+
+      throw new Error(`Error: ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log(`Fetched data from ${url}:`, data); // Debug response
+    console.log(`Successfully fetched data from ${url}`);
     return data;
-  } finally {
+  } catch (error: any) {
     clearTimeout(timeoutId);
+
+    if (error.name === 'AbortError') {
+      console.error('Request timeout for:', url);
+      throw new Error('Request timeout. Please try again.');
+    }
+
+    throw error;
   }
 };
 
@@ -190,10 +232,22 @@ export default function ViewResult() {
   }>({ key: 'score', direction: 'desc' });
 
   // Use SWR for caching and data fetching with revalidation and retry
-  const { data: resultsData, error: resultsError, isLoading: isResultsLoading } = useSWR(
+  const { data: resultsData, error: resultsError, isLoading: isResultsLoading, mutate: mutateResults } = useSWR(
     id ? `${apiUrl}/api/v1/results/${id}` : null,
     fetcher,
-    { revalidateOnMount: true, revalidateIfStale: true, retry: 2, errorRetryInterval: 2000 } // Retry twice with 2s interval
+    {
+      revalidateOnMount: true,
+      revalidateIfStale: true,
+      shouldRetryOnError: true,
+      errorRetryCount: 2, // Reduce retry count
+      errorRetryInterval: 2000,
+      dedupingInterval: 5000,
+      onError: (error) => {
+        console.error('Results fetch error:', error);
+      },
+      // Add fallback data
+      fallbackData: { success: true, results: [] }
+    }
   );
 
   const { data: violationsData, error: violationsError, isLoading: isViolationsLoading } = useSWR(
