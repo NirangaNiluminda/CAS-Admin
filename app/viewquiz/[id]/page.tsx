@@ -112,7 +112,19 @@ export default function ViewQuiz() {
   const [liveViolations, setLiveViolations] = useState<Violation[]>([]);
   const [isViolationsLoading, setIsViolationsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-
+  const [sidebarState, setSidebarState] = useState({
+  isCollapsed: false,
+  isMobile: false
+});
+const getResponsiveMargin = () => {
+  if (sidebarState.isMobile) {
+    return 'ml-0'; // No margin on mobile (sidebar is overlay)
+  } else if (sidebarState.isCollapsed) {
+    return 'ml-20'; // Collapsed sidebar width
+  } else {
+    return 'ml-72'; // Expanded sidebar width
+  }
+};
   // Fetch quiz data if not available in context
   useEffect(() => {
     if (!quiz && id) {
@@ -272,6 +284,21 @@ export default function ViewQuiz() {
   const handleGoBack = () => {
     router.push('/dashboard');
   };
+  useEffect(() => {
+  const checkScreenSize = () => {
+    const isMobile = window.innerWidth < 768;
+    const isCollapsed = window.innerWidth < 1024;
+    
+    setSidebarState({
+      isMobile,
+      isCollapsed: isMobile ? true : isCollapsed
+    });
+  };
+
+  checkScreenSize();
+  window.addEventListener('resize', checkScreenSize);
+  return () => window.removeEventListener('resize', checkScreenSize);
+}, []);
 
   const handleDownloadExcel = async () => {
     if (!quiz) {
@@ -426,7 +453,7 @@ export default function ViewQuiz() {
 
   if (!quiz) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12 px-4 sm:px-6 lg:px-8">
+      <div className={`min-h-screen bg-gradient-to-b from-green-50 to-white transition-all duration-300 ${getResponsiveMargin()}`}>
         <div className="max-w-4xl mx-auto">
           <Breadcrumbs items={[{ label: 'Loading Quiz...' }]} />
           <Card className="backdrop-blur-sm bg-white/80 border-green-200 shadow-lg">
@@ -451,7 +478,7 @@ export default function ViewQuiz() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12 px-4 sm:px-6 lg:px-8">
+    <div className={`min-h-screen bg-gradient-to-b from-green-50 to-white transition-all duration-300 ${getResponsiveMargin()}`}>
       <div className="fixed top-20 left-20 w-64 h-64 bg-green-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
       <div className="fixed top-40 right-20 w-72 h-72 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
 

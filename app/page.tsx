@@ -90,6 +90,8 @@ export default function Home() {
             const response = await axios.post(`${apiUrl}/api/v1/login-AdminUser`, {
                 email: formData.email,
                 password: formData.password,
+            }, {
+                withCredentials: true
             });
 
             if (response.status === 200 || response.data.success) {

@@ -75,6 +75,7 @@ const Sidebar = () => {
             localStorage.removeItem('token');
             sessionStorage.removeItem('token');
             sessionStorage.removeItem('name');
+            localStorage.removeItem('adminData');
             setAdmin(null);
             router.push('/');
         }, 600);

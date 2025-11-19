@@ -62,29 +62,87 @@ interface ViolationSummary {
 // Create a custom fetcher function with timeout
 const fetcher = async (url: string) => {
   const token = localStorage.getItem('token');
-  console.log('Fetching with token:', token); // Debug token
+  console.log('🔐 FETCHER START - Token:', token ? 'Present' : 'Missing', 'URL:', url);
+
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
 
   try {
+    console.log('📡 Making API request to:', url);
     const response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
+      credentials: 'include',
       signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
+    console.log('📨 Response status:', response.status, 'for URL:', url);
+
     if (!response.ok) {
-      const errorText = await response.text(); // Log error details
-      console.error(`Fetch failed for ${url}: ${response.status} - ${errorText}`);
-      throw new Error(`Error: ${response.statusText} - ${errorText}`);
+      if (response.status === 401) {
+        console.log('🔄 401 detected - attempting token refresh...');
+        
+        try {
+          const apiUrl = window.location.hostname === 'localhost'
+            ? 'http://localhost:4000'
+            : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+
+          console.log('🔄 Calling refresh endpoint...');
+          const refreshResponse = await fetch(`${apiUrl}/api/v1/refreshAdminToken`, {
+            method: 'GET',
+            credentials: 'include',
+          });
+
+          console.log('🔄 Refresh response status:', refreshResponse.status);
+          
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            console.log('🔄 Token refresh successful');
+            localStorage.setItem('token', refreshData.accessToken);
+            
+            // Retry original request
+            console.log('🔄 Retrying original request...');
+            const retryResponse = await fetch(url, {
+              headers: {
+                'Authorization': `Bearer ${refreshData.accessToken}`,
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+              signal: controller.signal,
+            });
+
+            if (retryResponse.ok) {
+              const data = await retryResponse.json();
+              console.log('✅ Request successful after refresh');
+              return data;
+            }
+          }
+        } catch (refreshError) {
+          console.error('❌ Token refresh failed:', refreshError);
+          window.location.href = '/';
+          throw new Error('Session expired');
+        }
+      }
+
+      const errorText = await response.text();
+      console.error('❌ Fetch failed:', response.status, errorText);
+      throw new Error(`Error: ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log(`Fetched data from ${url}:`, data); // Debug response
+    console.log('✅ Request successful');
     return data;
-  } finally {
+  } catch (error: any) {
     clearTimeout(timeoutId);
+    console.error('❌ Fetch error:', error);
+    
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout');
+    }
+    throw error;
   }
 };
 
@@ -190,10 +248,22 @@ export default function ViewResult() {
   }>({ key: 'score', direction: 'desc' });
 
   // Use SWR for caching and data fetching with revalidation and retry
-  const { data: resultsData, error: resultsError, isLoading: isResultsLoading } = useSWR(
+  const { data: resultsData, error: resultsError, isLoading: isResultsLoading, mutate: mutateResults } = useSWR(
     id ? `${apiUrl}/api/v1/results/${id}` : null,
     fetcher,
-    { revalidateOnMount: true, revalidateIfStale: true, retry: 2, errorRetryInterval: 2000 } // Retry twice with 2s interval
+    {
+      revalidateOnMount: true,
+      revalidateIfStale: true,
+      shouldRetryOnError: true,
+      errorRetryCount: 2, // Reduce retry count
+      errorRetryInterval: 2000,
+      dedupingInterval: 5000,
+      onError: (error) => {
+        console.error('Results fetch error:', error);
+      },
+      // Add fallback data
+      fallbackData: { success: true, results: [] }
+    }
   );
 
   const { data: violationsData, error: violationsError, isLoading: isViolationsLoading } = useSWR(
@@ -349,7 +419,7 @@ export default function ViewResult() {
                 There was a problem fetching the quiz results. Please try again later. Check console for details.
               </p>
               <Button
-                onClick={handleGoBack}
+                onClick={() => router.push(`/viewquiz/${id}`)}
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
               >
                 <ArrowLeft size={16} className="mr-2" />
@@ -373,12 +443,12 @@ export default function ViewResult() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {quiz && (
+          
             <Breadcrumbs items={[
-              { label: quiz.title, href: '/viewquiz' },
+              { label: quiz?.title || 'Quiz', href: `/viewquiz/${quiz?._id || id}` },
               { label: 'Results' }
             ]} />
-          )}
+          
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Button
