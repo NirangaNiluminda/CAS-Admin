@@ -387,7 +387,7 @@ const getResponsiveMargin = () => {
 
   const handleShareQuiz = () => {
     if (!quiz) return;
-    const quizUrl = `http://localhost:3001/signin/${quiz._id}`;
+    const quizUrl = `https://cas-user.vercel.app/signin/${quiz._id}`;
     navigator.clipboard.writeText(quizUrl)
       .then(() => {
         console.log("Quiz link copied to clipboard");
