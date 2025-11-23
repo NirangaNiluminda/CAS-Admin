@@ -74,39 +74,6 @@ export default function Page() {
         recentActivity: 0
     });
 
-    // Add responsive state for sidebar
-    const [sidebarState, setSidebarState] = useState({
-        isCollapsed: false,
-        isMobile: false
-    });
-
-    useEffect(() => {
-        const checkScreenSize = () => {
-            const isMobile = window.innerWidth < 768;
-            const isCollapsed = window.innerWidth < 1024;
-
-            setSidebarState({
-                isMobile,
-                isCollapsed: isMobile ? true : isCollapsed
-            });
-        };
-
-        checkScreenSize();
-        window.addEventListener('resize', checkScreenSize);
-        return () => window.removeEventListener('resize', checkScreenSize);
-    }, []);
-
-    // Calculate responsive margin based on sidebar state
-    const getResponsiveMargin = () => {
-        if (sidebarState.isMobile) {
-            return 'ml-0'; // No margin on mobile (sidebar is overlay)
-        } else if (sidebarState.isCollapsed) {
-            return 'ml-20'; // Collapsed sidebar width
-        } else {
-            return 'ml-72'; // Expanded sidebar width
-        }
-    };
-
     useEffect(() => {
         const fetchAssignments = async () => {
             setIsLoading(true);
@@ -291,8 +258,8 @@ export default function Page() {
             <div className="fixed top-40 right-20 w-72 h-72 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
             <div className="fixed bottom-20 left-1/4 w-56 h-56 bg-green-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
 
-            {/* Main content with responsive margin */}
-            <div className={`transition-all duration-300 ${getResponsiveMargin()}`}>
+            {/* Main content */}
+            <div className="w-full">
                 <div className="p-4 md:p-8">
                     <div className="max-w-7xl mx-auto relative z-10">
                         <motion.div
@@ -656,7 +623,6 @@ export default function Page() {
                                 </div>
                             </div>
 
-                            {/* Table Section */}
                             {/* Table Section */}
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
