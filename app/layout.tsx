@@ -1,4 +1,3 @@
-// app/layout.tsx
 'use client';
 
 import type { Metadata } from "next";
@@ -9,21 +8,28 @@ import Navbar from "./components/Navbar/Navbar";
 import { QuizProvider } from "./context/QuizContext";
 import { EssayProvider } from "./context/EssayContext";
 import { SidebarProvider, useSidebar } from "./context/SidebarContext";
+import { LayoutProvider } from "./context/LayoutContext";
+import PageWrapper from "./components/PageWrapper";
 import { Toaster } from 'sonner';
 import axios from 'axios';
 import { useEffect } from "react";
+import { usePathname } from 'next/navigation';
 
 const inter = Inter({ subsets: ["latin"] });
 
 // Component to handle main content margin based on sidebar state
 const MainContent = ({ children }: { children: React.ReactNode }) => {
   const { isCollapsed, isMobile } = useSidebar();
+  const pathname = usePathname();
+
+  // Check if current page is an auth page
+  const isAuthPage = ['/', '/sign-in', '/signup', '/forgot-password', '/reset-password'].includes(pathname) || pathname.startsWith('/activate');
 
   // Calculate margin based on sidebar state
-  // Mobile: ml-0 (sidebar is overlay)
+  // Mobile or Auth Page: ml-0
   // Desktop Collapsed: ml-20
   // Desktop Expanded: ml-72
-  const marginLeft = isMobile ? 'ml-0' : (isCollapsed ? 'ml-20' : 'ml-72');
+  const marginLeft = (isMobile || isAuthPage) ? 'ml-0' : (isCollapsed ? 'ml-20' : 'ml-72');
 
   return (
     <main className={`min-h-screen bg-gray-50 transition-all duration-300 ease-out ${marginLeft}`}>
@@ -42,6 +48,7 @@ export default function RootLayout({
     const initializeApp = async () => {
       const token = localStorage.getItem('token');
       console.log('App loading - Token present:', !!token);
+
 
       // If no token or token might be expired, refresh it
       if (!token) {
@@ -69,6 +76,7 @@ export default function RootLayout({
           ? 'http://localhost:4000'
           : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
 
+
         console.log('Calling refreshAdminToken...');
         const response = await fetch(`${apiUrl}/api/v1/refreshAdminToken`, {
           method: 'GET',
@@ -77,10 +85,12 @@ export default function RootLayout({
 
         console.log('Refresh response status:', response.status);
 
+
         if (response.ok) {
           const data = await response.json();
           console.log('Token refresh successful');
           localStorage.setItem('token', data.accessToken);
+
 
           // Set axios default header
           if (data.accessToken) {
@@ -103,6 +113,7 @@ export default function RootLayout({
           error.config._retry = true;
           console.log('Axios interceptor: Token expired, refreshing...');
           await refreshToken();
+
 
           // Retry with new token
           const newToken = localStorage.getItem('token');
