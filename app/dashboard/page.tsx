@@ -259,6 +259,26 @@ export default function Page() {
             <div className="fixed bottom-20 left-1/4 w-56 h-56 bg-green-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
 
             {/* Main content */}
+            <div className="w-full">
+                <div className="p-4 md:p-8">
+                    <div className="max-w-7xl mx-auto relative z-10">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                        >
+                            {/* Header Section */}
+                            <div className="flex flex-col md:flex-row items-center justify-between mb-8">
+                                <div className="flex items-center space-x-4 mb-4 md:mb-0">
+                                    <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl shadow-lg flex items-center justify-center transform rotate-3">
+                                        <BookOpen className="h-6 w-6 md:h-8 md:w-8 text-white" />
+                                    </div>
+                                    <div>
+                                        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Teacher Dashboard</h1>
+                                        <p className="text-gray-600 text-sm md:text-base">Manage your assignments and quizzes</p>
+                                    </div>
+                                </div>
+            {/* Main content */}
             <div className="p-4 md:p-8">
                 <div className="max-w-7xl mx-auto relative z-10">
                     <motion.div
@@ -622,6 +642,20 @@ export default function Page() {
                             </div>
                         </div>
 
+                            {/* Table Section */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.2 }}
+                                className="bg-white rounded-2xl shadow-lg overflow-hidden border border-green-100"
+                                id="allAssignmentsTable"
+                            >
+                                <div className="p-4 md:p-6 border-b border-green-100">
+                                    <h3 className="text-lg md:text-xl font-semibold text-gray-800 flex items-center">
+                                        <List className="h-5 w-5 mr-2 text-green-600" />
+                                        Your Assignments
+                                    </h3>
+                                </div>
                         {/* Table Section */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}

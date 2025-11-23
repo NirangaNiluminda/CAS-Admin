@@ -3,18 +3,34 @@
 import { useRouter, usePathname } from 'next/navigation';
 import React, { useEffect, useState, useRef } from 'react';
 import { useAdmin } from '@/app/context/AdminContext';
+import { useSidebar } from '@/app/context/SidebarContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+    LayoutDashboard,
+    FileText,
+    BarChart2,
+    User,
+    LogOut,
+    ChevronLeft,
+    ChevronRight,
+    Menu,
+    X
+} from 'lucide-react';
 
 const Sidebar = () => {
     const router = useRouter();
     const pathname = usePathname();
     const { admin, setAdmin } = useAdmin();
-    const [apiUrl, setApiUrl] = useState('');
+    const {
+        isCollapsed,
+        isMobile,
+        showMobileMenu,
+        toggleCollapse,
+        toggleMobileMenu,
+        closeMobileMenu
+    } = useSidebar();
+
     const [name, setName] = useState('');
-    const [isCollapsed, setIsCollapsed] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
-    const [showMobileMenu, setShowMobileMenu] = useState(false);
-    const [hoverItem, setHoverItem] = useState<number | null>(null);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     // Ref for the sidebar to detect clicks outside
@@ -28,34 +44,19 @@ const Sidebar = () => {
         }
     }, [admin]);
 
+    // Close sidebar when clicking outside (for mobile)
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            if (window.location.hostname === 'localhost') {
-                setApiUrl('http://localhost:4000');
-            } else {
-                setApiUrl(process.env.NEXT_PUBLIC_API_URL || 'https://cas-backend-vv78.onrender.com');
+        const handleClickOutside = (event: MouseEvent) => {
+            if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node) && isMobile && showMobileMenu) {
+                closeMobileMenu();
             }
+        };
 
-            const handleResize = () => {
-                const width = window.innerWidth;
-                setIsMobile(width < 768);
-                if (width >= 1024) {
-                    setIsCollapsed(false); // Expanded on large screens
-                } else if (width >= 768) {
-                    setIsCollapsed(true); // Collapsed on medium screens
-                }
-                if (width >= 768) {
-                    setShowMobileMenu(false);
-                }
-            };
-
-            // Close sidebar when clicking outside (for mobile)
-            const handleClickOutside = (event: MouseEvent) => {
-                if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node) && isMobile) {
-                    setShowMobileMenu(false);
-                }
-            };
-
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isMobile, showMobileMenu, closeMobileMenu]);
             handleResize();
             window.addEventListener('resize', handleResize);
             document.addEventListener('mousedown', handleClickOutside);
@@ -81,6 +82,7 @@ const Sidebar = () => {
         }, 600);
     };
 
+    const isSignInPage = pathname === '/sign-in' || pathname === '/';
     const handleProfileClick = () => {
         router.push('/profile');
     };
@@ -89,91 +91,34 @@ const Sidebar = () => {
 
     // Don't render sidebar on sign-in page
     if (isSignInPage) return null;
+    if (!admin) return null;
+
 
     // Get initials for avatar
     const getInitials = (fullName: string) => {
         if (!fullName) return 'U';
-        return fullName
-            .split(' ')
-            .map(name => name.charAt(0))
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
+        return fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     };
 
-    // Navigation items with icons
     const navItems = [
-        {
-            name: 'Dashboard',
-            path: '/dashboard',
-            icon: (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-            ),
-            description: 'Overview of your activity'
-        },
-        {
-            name: 'Manage Assignments',
-            path: '/addingquiz',
-            icon: (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="12" y1="18" x2="12" y2="12"></line>
-                    <line x1="9" y1="15" x2="15" y2="15"></line>
-                </svg>
-            ),
-            description: 'Create and manage assessments'
-        },
-        {
-            name: 'Analytics',
-            path: '/analytics',
-            icon: (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="20" x2="18" y2="10"></line>
-                    <line x1="12" y1="20" x2="12" y2="4"></line>
-                    <line x1="6" y1="20" x2="6" y2="14"></line>
-                </svg>
-            ),
-            description: 'Track student performance'
-        },
-        {
-            name: 'Profile',
-            path: '/profile',
-            icon: (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-            ),
-            description: 'View and edit your profile'
-        }
+        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        { name: 'Manage Assignments', path: '/addingquiz', icon: FileText },
+        { name: 'Analytics', path: '/analytics', icon: BarChart2 },
+        { name: 'Profile', path: '/profile', icon: User }
     ];
 
-    if (!admin) return null;
-
-    // Mobile menu toggle button with glass effect
+    // Mobile Menu Button
     const MobileMenuButton = () => (
+        <motion.button
+            onClick={toggleMobileMenu}
+            className="md:hidden fixed top-4 left-4 z-50 bg-white/80 backdrop-blur-md text-emerald-600 p-3 rounded-xl shadow-lg border border-emerald-100"
         <motion.button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
             className="md:hidden fixed top-4 left-4 z-50 bg-white/80 backdrop-blur-md p-2.5 rounded-full shadow-lg border border-green-100"
             whileHover={{ scale: 1.05, boxShadow: "0 8px 20px rgba(0, 128, 0, 0.2)" }}
             whileTap={{ scale: 0.95 }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.2 }}
         >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {showMobileMenu ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-            </svg>
+            {showMobileMenu ? <X size={24} /> : <Menu size={24} />}
         </motion.button>
     );
 
@@ -209,23 +154,115 @@ const Sidebar = () => {
         <>
             <MobileMenuButton />
 
+            {/* Mobile Backdrop */}
+
             {/* Backdrop overlay for mobile */}
             <AnimatePresence>
                 {isMobile && showMobileMenu && (
                     <motion.div
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30"
-                        onClick={() => setShowMobileMenu(false)}
-                    ></motion.div>
+                        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30"
+                        onClick={closeMobileMenu}
+                    />
                 )}
             </AnimatePresence>
+
+            {/* Sidebar Container */}
+            <motion.div
 
             {/* Sidebar */}
             <motion.div
                 ref={sidebarRef}
+                className={`fixed inset-y-0 left-0 z-40 flex flex-col 
+                    bg-gradient-to-b from-emerald-50/60 via-white to-emerald-50/60 
+                    backdrop-blur-xl border-r border-emerald-100/80 shadow-2xl shadow-emerald-100/40
+                    ${isMobile ? (showMobileMenu ? 'translate-x-0 w-72' : '-translate-x-full') : (isCollapsed ? 'w-20' : 'w-72')}
+                `}
+                initial={false}
+                animate={{
+                    width: isMobile ? 288 : (isCollapsed ? 80 : 288),
+                    x: isMobile ? (showMobileMenu ? 0 : -300) : 0
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+                {/* Header / Logo */}
+                <div className={`relative z-10 flex items-center h-24 transition-all duration-300 ${isCollapsed ? 'justify-center px-0' : 'px-6'}`}>
+                    <div className="flex items-center gap-4 overflow-hidden">
+                        <motion.div
+                            layout
+                            className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-200"
+                        >
+                            <span className="font-bold text-white text-xl">A</span>
+                        </motion.div>
+
+                        <AnimatePresence>
+                            {!isCollapsed && (
+                                <motion.div
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -10 }}
+                                    className="flex flex-col"
+                                >
+                                    <span className="font-bold text-lg tracking-wide text-slate-800">Admin</span>
+                                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Portal</span>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </div>
+
+                {/* Navigation */}
+                <div className="flex-1 px-3 py-6 space-y-2 overflow-y-auto scrollbar-hide relative z-10">
+                    {navItems.map((item) => {
+                        const isActive = pathname === item.path;
+                        const Icon = item.icon;
+
+                        return (
+                            <motion.button
+                                key={item.path}
+                                onClick={() => {
+                                    router.push(item.path);
+                                    if (isMobile) closeMobileMenu();
+                                }}
+                                layout
+                                className={`relative flex items-center transition-all duration-300 group overflow-hidden
+                                    ${isCollapsed
+                                        ? 'justify-center w-12 h-12 mx-auto rounded-xl'
+                                        : 'w-full p-3.5 rounded-xl'
+                                    }
+                                    ${isActive
+                                        ? (isCollapsed
+                                            ? 'text-emerald-600 bg-emerald-100/80 shadow-sm ring-1 ring-emerald-200'
+                                            : 'text-emerald-800 shadow-md shadow-emerald-100/60')
+                                        : 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50/60'}
+                                `}
+                            >
+                                {isActive && !isCollapsed && (
+                                    <motion.div
+                                        layoutId="activeNavExpanded"
+                                        className="absolute inset-0 bg-gradient-to-r from-emerald-50 to-white border border-emerald-100/60"
+                                        initial={false}
+                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                    />
+                                )}
+
+                                <span className="relative z-10 flex-shrink-0">
+                                    <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                                </span>
+
+                                <AnimatePresence>
+                                    {!isCollapsed && (
+                                        <motion.span
+                                            initial={{ opacity: 0, width: 0 }}
+                                            animate={{ opacity: 1, width: "auto" }}
+                                            exit={{ opacity: 0, width: 0 }}
+                                            className="relative z-10 ml-4 font-medium whitespace-nowrap"
+                                        >
+                                            {item.name}
+                                        </motion.span>
                 className={`fixed inset-y-0 left-0 transform transition-all duration-300 ease-out z-40 ${isMobile ? (showMobileMenu ? 'translate-x-0 w-72' : '-translate-x-full') : (isCollapsed ? 'w-20' : 'w-72')
                     }`}
                 initial={isMobile ? { x: "-100%" } : { x: 0 }}
@@ -282,11 +319,16 @@ const Sidebar = () => {
                                     ) : (
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
                                     )}
-                                </svg>
+                                </AnimatePresence>
                             </motion.button>
-                        )}
-                    </div>
+                        );
+                    })}
+                </div>
 
+                {/* Footer / User Profile */}
+                <div className={`relative z-10 p-4 border-t border-emerald-100/80 bg-white/40 backdrop-blur-md transition-all duration-300 ${isCollapsed ? 'px-2' : 'px-4'}`}>
+                    <div className={`flex items-center ${isCollapsed ? 'justify-center flex-col gap-4' : 'justify-between'}`}>
+                        <div className="flex items-center gap-3 overflow-hidden cursor-pointer" onClick={() => router.push('/profile')}>
                     {/* User profile section */}
                     <motion.div
                         className={`flex flex-col px-4 py-5 border-b border-green-100 relative z-10 ${isCollapsed ? 'items-center' : ''}`}
@@ -296,18 +338,26 @@ const Sidebar = () => {
                     >
                         <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''}`}>
                             <motion.div
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="relative"
+                                layout
+                                className="relative flex-shrink-0"
                             >
-                                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 text-white rounded-full flex items-center justify-center shadow-md ring-2 ring-white">
-                                    <span className="text-lg font-semibold">{getInitials(name)}</span>
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-100 to-teal-50 flex items-center justify-center border border-emerald-200 shadow-sm">
+                                    <span className="font-bold text-emerald-700">{getInitials(name)}</span>
                                 </div>
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white"></div>
+                                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" />
                             </motion.div>
+
 
                             <AnimatePresence>
                                 {!isCollapsed && (
+                                    <motion.div
+                                        initial={{ opacity: 0, width: 0 }}
+                                        animate={{ opacity: 1, width: "auto" }}
+                                        exit={{ opacity: 0, width: 0 }}
+                                        className="flex flex-col min-w-0"
+                                    >
+                                        <span className="font-semibold text-sm text-slate-800 truncate">{name}</span>
+                                        <span className="text-xs text-emerald-600 font-medium truncate">Administrator</span>
                                     <motion.div
                                         className="ml-3"
                                         initial={{ opacity: 0 }}
@@ -324,6 +374,17 @@ const Sidebar = () => {
                                 )}
                             </AnimatePresence>
                         </div>
+
+                        {!isCollapsed && (
+                            <motion.button
+                                whileHover={{ scale: 1.1, color: "#ef4444", backgroundColor: "#fef2f2" }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={handleLogout}
+                                className="p-2 text-slate-400 hover:text-red-500 rounded-lg transition-all"
+                            >
+                                <LogOut size={18} />
+                            </motion.button>
+                        )}
                     </motion.div>
 
                     {/* Navigation section */}
@@ -444,12 +505,17 @@ const Sidebar = () => {
                         </motion.button>
                     </div>
                 </div>
-            </motion.div>
 
-            {/* Main content area */}
-            <div className={`transition-all duration-300 ease-out ${isMobile ? (showMobileMenu ? 'ml-72' : 'ml-0') : (isCollapsed ? 'ml-20' : 'ml-72')}`}>
-                {/* This is where your main content will go */}
-            </div>
+                {/* Collapse Toggle (Desktop Only) */}
+                {!isMobile && (
+                    <button
+                        onClick={toggleCollapse}
+                        className="absolute -right-3 top-24 z-50 flex items-center justify-center w-6 h-6 bg-white text-emerald-600 border border-emerald-100 rounded-full shadow-md hover:bg-emerald-50 transition-colors focus:outline-none"
+                    >
+                        {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+                    </button>
+                )}
+            </motion.div>
         </>
     );
 };

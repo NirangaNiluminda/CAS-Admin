@@ -112,19 +112,7 @@ export default function ViewQuiz() {
   const [liveViolations, setLiveViolations] = useState<Violation[]>([]);
   const [isViolationsLoading, setIsViolationsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [sidebarState, setSidebarState] = useState({
-  isCollapsed: false,
-  isMobile: false
-});
-const getResponsiveMargin = () => {
-  if (sidebarState.isMobile) {
-    return 'ml-0'; // No margin on mobile (sidebar is overlay)
-  } else if (sidebarState.isCollapsed) {
-    return 'ml-20'; // Collapsed sidebar width
-  } else {
-    return 'ml-72'; // Expanded sidebar width
-  }
-};
+
   // Fetch quiz data if not available in context
   useEffect(() => {
     if (!quiz && id) {
@@ -200,9 +188,9 @@ const getResponsiveMargin = () => {
     // Fetch quiz statistics
     const fetchQuizStats = async () => {
       if (!quiz) return;
-      
+
       setIsStatsLoading(true);
-    
+
       try {
         let apiUrl;
         if (typeof window !== 'undefined') {
@@ -210,21 +198,21 @@ const getResponsiveMargin = () => {
             ? 'http://localhost:4000'
             : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
         }
-    
+
         const response = await fetch(`${apiUrl}/api/v1/stats/${quiz._id}`);
-    
+
         if (response.ok) {
           const data = await response.json();
           console.log("Stats API response:", data);
-          
+
           const activeCount = data.activeCount || 0;
           const completedCount = data.completedCount || 0;
-          
+
           const totalStudents = activeCount + completedCount;
-          const completionRate = totalStudents > 0 
-            ? Math.round((completedCount / totalStudents) * 100) 
+          const completionRate = totalStudents > 0
+            ? Math.round((completedCount / totalStudents) * 100)
             : 0;
-    
+
           setQuizStats({
             totalStudents: totalStudents,
             completedAttempts: completedCount,
@@ -284,21 +272,6 @@ const getResponsiveMargin = () => {
   const handleGoBack = () => {
     router.push('/dashboard');
   };
-  useEffect(() => {
-  const checkScreenSize = () => {
-    const isMobile = window.innerWidth < 768;
-    const isCollapsed = window.innerWidth < 1024;
-    
-    setSidebarState({
-      isMobile,
-      isCollapsed: isMobile ? true : isCollapsed
-    });
-  };
-
-  checkScreenSize();
-  window.addEventListener('resize', checkScreenSize);
-  return () => window.removeEventListener('resize', checkScreenSize);
-}, []);
 
   const handleDownloadExcel = async () => {
     if (!quiz) {
@@ -452,33 +425,11 @@ const getResponsiveMargin = () => {
   const uniqueStudentCount = Object.keys(groupedViolations).length;
 
   if (!quiz) {
-    return (
-      <div className={`min-h-screen bg-gradient-to-b from-green-50 to-white transition-all duration-300 ${getResponsiveMargin()}`}>
-        <div className="max-w-4xl mx-auto">
-          <Breadcrumbs items={[{ label: 'Loading Quiz...' }]} />
-          <Card className="backdrop-blur-sm bg-white/80 border-green-200 shadow-lg">
-            <CardHeader>
-              <Skeleton className="h-8 w-[250px]" />
-              <Skeleton className="h-4 w-[300px]" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="space-y-2">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-[90%]" />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b from-green-50 to-white transition-all duration-300 ${getResponsiveMargin()}`}>
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white transition-all duration-300 w-full">
       <div className="fixed top-20 left-20 w-64 h-64 bg-green-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
       <div className="fixed top-40 right-20 w-72 h-72 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
 
@@ -801,41 +752,14 @@ const getResponsiveMargin = () => {
                 <motion.div
                   whileHover={{ y: -5 }}
                   transition={{ duration: 0.2 }}
-                  className="bg-white rounded-xl p-4 shadow-sm border border-green-100"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="bg-green-100 rounded-lg p-2">
-                      <User className="h-5 w-5 text-green-600" />
-                    </div>
-                    <Badge variant="outline" className="bg-green-50 text-green-600 flex items-center">
-                      Students
-                      {isStatsLoading && (
-                        <div className="ml-2 h-3 w-3 rounded-full bg-green-500 animate-pulse"></div>
-                      )}
-                    </Badge>
-                  </div>
-                  {isStatsLoading ? (
-                    <Skeleton className="h-8 w-16 mt-1" />
-                  ) : (
-                    <h4 className="text-2xl font-bold text-gray-800">{quizStats.totalStudents}</h4>
-                  )}
-                  <p className="text-sm text-gray-500">Total students</p>
-                </motion.div>
-
-                <motion.div
-                  whileHover={{ y: -5 }}
-                  transition={{ duration: 0.2 }}
-                  className="bg-white rounded-xl p-4 shadow-sm border border-green-100"
+                  className="bg-white rounded-xl p-4 shadow-sm border border-blue-100"
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div className="bg-blue-100 rounded-lg p-2">
                       <Check className="h-5 w-5 text-blue-600" />
                     </div>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-600 flex items-center">
-                      Completion
-                      {isStatsLoading && (
-                        <div className="ml-2 h-3 w-3 rounded-full bg-blue-500 animate-pulse"></div>
-                      )}
+                    <Badge variant="outline" className="bg-blue-50 text-blue-600">
+                      Completed
                     </Badge>
                   </div>
                   {isStatsLoading ? (
@@ -843,412 +767,323 @@ const getResponsiveMargin = () => {
                   ) : (
                     <h4 className="text-2xl font-bold text-gray-800">{quizStats.completedAttempts}</h4>
                   )}
-                  <p className="text-sm text-gray-500">Completed attempts</p>
+                  <p className="text-sm text-gray-500">Submissions</p>
+                </motion.div>
+
+                <motion.div
+                  whileHover={{ y: -5 }}
+                  transition={{ duration: 0.2 }}
+                  className="bg-white rounded-xl p-4 shadow-sm border border-purple-100"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="bg-purple-100 rounded-lg p-2">
+                      <BarChart3 className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <Badge variant="outline" className="bg-purple-50 text-purple-600">
+                      Avg Score
+                    </Badge>
+                  </div>
+                  {isStatsLoading ? (
+                    <Skeleton className="h-8 w-16 mt-1" />
+                  ) : (
+                    <h4 className="text-2xl font-bold text-gray-800">{quizStats.averageScore}%</h4>
+                  )}
+                  <p className="text-sm text-gray-500">Class Average</p>
                 </motion.div>
               </div>
             </div>
 
-            <Separator className="bg-green-100" />
-
-            <div className="px-8 pt-6">
-              <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
-                <TabsList className="grid grid-cols-2 lg:grid-cols-4 mb-6">
-                  <TabsTrigger value="overview" className="data-[state=active]:bg-green-100 data-[state=active]:text-green-700">
+            <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <div className="px-8">
+                <TabsList className="grid w-full grid-cols-3 mb-6 h-12 bg-green-50/50 p-1 rounded-xl">
+                  <TabsTrigger
+                    value="overview"
+                    className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm transition-all"
+                  >
                     <Info className="h-4 w-4 mr-2" />
                     Overview
                   </TabsTrigger>
-                  <TabsTrigger value="questions" className="data-[state=active]:bg-green-100 data-[state=active]:text-green-700">
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    Questions
-                  </TabsTrigger>
-                  <TabsTrigger value="monitor" className="data-[state=active]:bg-green-100 data-[state=active]:text-green-700">
+                  <TabsTrigger
+                    value="monitor"
+                    className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-amber-700 data-[state=active]:shadow-sm transition-all"
+                  >
                     <Shield className="h-4 w-4 mr-2" />
-                    Monitor
+                    Live Monitor
                   </TabsTrigger>
-                  <TabsTrigger value="results" className="data-[state=active]:bg-green-100 data-[state=active]:text-green-700">
+                  <TabsTrigger
+                    value="results"
+                    className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-sm transition-all"
+                  >
                     <BarChart3 className="h-4 w-4 mr-2" />
                     Results
                   </TabsTrigger>
                 </TabsList>
+              </div>
 
-                <TabsContent value="overview" className="mt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    <div className="md:col-span-2 space-y-4">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-lg">Quiz Details</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <div>
-                              <h4 className="text-sm font-medium text-gray-500">Description</h4>
-                              <p className="text-gray-700">{quiz.description || "No description provided"}</p>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <h4 className="text-sm font-medium text-gray-500">Created</h4>
-                                <p className="text-gray-700">{formatDate(quiz.createdAt)}</p>
-                              </div>
-                              <div>
-                                <h4 className="text-sm font-medium text-gray-500">Time Limit</h4>
-                                <p className="text-gray-700">{quiz.timeLimit ? `${quiz.timeLimit} minutes` : "No limit"}</p>
-                              </div>
-                              <div>
-                                <h4 className="text-sm font-medium text-gray-500">Questions</h4>
-                                <p className="text-gray-700">{quiz.questions.length}</p>
-                              </div>
-                              <div>
-                                <h4 className="text-sm font-medium text-gray-500">Category</h4>
-                                <p className="text-gray-700">{quiz.category || "Uncategorized"}</p>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-lg">Completion Rate</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-sm text-gray-500">Progress</span>
-                              {isStatsLoading ? (
-                                <Skeleton className="h-4 w-16" />
-                              ) : (
-                                <span className="text-sm font-medium">{quizStats.completionRate}%</span>
-                              )}
-                            </div>
-                            {isStatsLoading ? (
-                              <Skeleton className="h-2 w-full" />
-                            ) : (
-                              <Progress value={quizStats.completionRate} className="h-2" />
-                            )}
-                            <p className="text-sm text-gray-500 mt-2">
-                              {isStatsLoading ? (
-                                <Skeleton className="h-4 w-full" />
-                              ) : (
-                                `${quizStats.completedAttempts} out of ${quizStats.totalStudents} students have completed this quiz.`
-                              )}
-                            </p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    <div className="space-y-4">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-lg">Quick Actions</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            <Button
-                              variant="ghost"
-                              className="w-full justify-start border border-green-200 hover:bg-green-100 text-green-700 mb-2"
-                              onClick={handleDownloadExcel}
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              Download Results
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              className="w-full justify-start border border-green-200 hover:bg-green-100 text-green-700 mb-2"
-                              onClick={handleFullDownloadExcel}
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              Download Full Results
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              className="w-full justify-start border border-green-200 hover:bg-green-100 text-green-700"
-                              onClick={handleShareQuiz}
-                            >
-                              <Share2 className="h-4 w-4 mr-2" />
-                              Share Quiz
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-lg">Quiz ID</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="p-3 bg-gray-50 rounded-md font-mono text-sm break-all">
-                            {quiz._id}
-                          </div>
-                          <p className="text-xs text-gray-500 mt-2">Use this ID when reporting issues or requesting support.</p>
-                        </CardContent>
-                      </Card>
-                    </div>
+              <TabsContent value="overview" className="mt-0">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                      <HelpCircle className="h-5 w-5 text-green-600" />
+                      Questions ({quiz.questions.length})
+                    </h3>
                   </div>
-                </TabsContent>
-
-                <TabsContent value="questions" className="mt-0">
-                  <CardContent className="p-0">
-                    <ScrollArea className="h-[60vh] rounded-lg border border-green-200 bg-white">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-gradient-to-r from-green-50 to-green-100">
-                            <TableHead className="w-[50px] font-semibold text-green-700">No.</TableHead>
-                            <TableHead className="font-semibold text-green-700">Question</TableHead>
-                            <TableHead className="font-semibold text-green-700">Options</TableHead>
-                            <TableHead className="w-[120px] font-semibold text-green-700 text-center">Correct Answer</TableHead>
+                  <ScrollArea className="h-[400px] rounded-xl border border-green-100 bg-white">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-green-50 z-10">
+                        <TableRow>
+                          <TableHead className="w-[50px] font-semibold text-green-700">#</TableHead>
+                          <TableHead className="font-semibold text-green-700">Question</TableHead>
+                          <TableHead className="font-semibold text-green-700">Options</TableHead>
+                          <TableHead className="w-[120px] font-semibold text-green-700 text-center">Correct Answer</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {quiz.questions.map((question, index) => (
+                          <TableRow key={index} className="hover:bg-green-50/50 transition-colors">
+                            <TableCell className="font-medium text-green-600">
+                              {index + 1}
+                            </TableCell>
+                            <TableCell className="text-gray-700">
+                              {question.questionText}
+                            </TableCell>
+                            <TableCell className="max-w-xl">
+                              <div className="grid grid-cols-1 gap-2">
+                                {question.options.map((option) => (
+                                  <div
+                                    key={option._id}
+                                    className={`p-2 rounded-md text-sm ${option.isCorrect
+                                      ? 'bg-green-50 text-green-700 border border-green-200'
+                                      : 'bg-gray-50 text-gray-600 border border-gray-200'
+                                      }`}
+                                  >
+                                    {option.text}
+                                  </div>
+                                ))}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {question.options.find(opt => opt.isCorrect)?.text}
+                            </TableCell>
                           </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {quiz.questions.map((question, index) => (
-                            <TableRow key={index} className="hover:bg-green-50/50 transition-colors">
-                              <TableCell className="font-medium text-green-600">
-                                {index + 1}
-                              </TableCell>
-                              <TableCell className="text-gray-700">
-                                {question.questionText}
-                              </TableCell>
-                              <TableCell className="max-w-xl">
-                                <div className="grid grid-cols-1 gap-2">
-                                  {question.options.map((option) => (
-                                    <div
-                                      key={option._id}
-                                      className={`p-2 rounded-md text-sm ${option.isCorrect
-                                        ? 'bg-green-50 text-green-700 border border-green-200'
-                                        : 'bg-gray-50 text-gray-600 border border-gray-200'
-                                        }`}
-                                    >
-                                      {option.text}
-                                    </div>
-                                  ))}
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                {question.options.find(opt => opt.isCorrect)?.text}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </ScrollArea>
-                  </CardContent>
-                </TabsContent>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                </CardContent>
+              </TabsContent>
 
-                <TabsContent value="monitor" className="mt-0">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                        <Shield className="h-5 w-5 text-amber-600" />
-                        Live Student Monitoring
-                      </h3>
-                      <Badge variant="outline" className="bg-amber-50 text-amber-600 flex items-center gap-1">
-                        <Bell className="h-4 w-4" />
-                        {isViolationsLoading ? (
-                          <span className="flex items-center">
-                            Updating
-                            <span className="ml-2 h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
-                          </span>
-                        ) : (
-                          <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
-                        )}
-                      </Badge>
-                    </div>
+              <TabsContent value="monitor" className="mt-0">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                      <Shield className="h-5 w-5 text-amber-600" />
+                      Live Student Monitoring
+                    </h3>
+                    <Badge variant="outline" className="bg-amber-50 text-amber-600 flex items-center gap-1">
+                      <Bell className="h-4 w-4" />
+                      {isViolationsLoading ? (
+                        <span className="flex items-center">
+                          Updating
+                          <span className="ml-2 h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+                        </span>
+                      ) : (
+                        <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
+                      )}
+                    </Badge>
+                  </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                      <Card className="border border-amber-200 bg-white shadow-sm">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-medium text-gray-600">Active Violations</h4>
-                            <Badge variant="outline" className="bg-amber-50 text-amber-600">
-                              {liveViolations.length}
-                            </Badge>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <Card className="border border-amber-200 bg-white shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-medium text-gray-600">Active Violations</h4>
+                          <Badge variant="outline" className="bg-amber-50 text-amber-600">
+                            {liveViolations.length}
+                          </Badge>
+                        </div>
+                        <div className="mt-2">
+                          <div className="text-2xl font-bold text-amber-600">
+                            {liveViolations.length}
                           </div>
-                          <div className="mt-2">
-                            <div className="text-2xl font-bold text-amber-600">
-                              {liveViolations.length}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              across {uniqueStudentCount} students
-                            </div>
+                          <div className="text-sm text-gray-500">
+                            across {uniqueStudentCount} students
                           </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="border border-amber-200 bg-white shadow-sm">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-medium text-gray-600">Students with Violations</h4>
-                            <Badge variant="outline" className="bg-amber-50 text-amber-600">
-                              {uniqueStudentCount}
-                            </Badge>
-                          </div>
-                          <div className="mt-2">
-                            <div className="text-2xl font-bold text-amber-600">
-                              {quizStats.activeStudents > 0 ? Math.round((uniqueStudentCount / quizStats.activeStudents) * 100) : 0}%
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              of active students
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="border border-amber-200 bg-white shadow-sm">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-medium text-gray-600">Most Common Violation</h4>
-                          </div>
-                          <div className="mt-2">
-                            {mostCommonType ? (
-                              <>
-                                <div className="text-lg font-bold text-gray-800">{mostCommonType}</div>
-                                <div className="text-sm text-gray-500">
-                                  {liveViolations.filter(v => v.violation.type === mostCommonType).length} occurrences
-                                </div>
-                              </>
-                            ) : (
-                              <div className="text-gray-500">No violations detected</div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    <Card className="border border-amber-200 shadow-sm mb-6">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4 text-amber-600" />
-                          Students with Active Violations
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ScrollArea className="h-[300px]">
-                          {Object.keys(groupedViolations).length === 0 ? (
-                            <div className="text-center py-8">
-                              <Shield className="mx-auto h-10 w-10 text-gray-300" />
-                              <p className="mt-2 text-gray-500">No violations detected</p>
-                            </div>
-                          ) : (
-                            Object.values(groupedViolations).map((data: any, index: number) => (
-                              <Collapsible key={data.student._id} className="mb-3">
-                                <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                                  <CollapsibleTrigger className="w-full">
-                                    <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50">
-                                      <div className="flex items-center gap-3">
-                                        <Avatar className="h-10 w-10 border border-gray-200">
-                                          <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${data.student.name}`} />
-                                          <AvatarFallback className="bg-amber-50 text-amber-600">
-                                            {data.student.name.charAt(0)}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                          <h4 className="font-medium text-gray-800">{data.student.name}</h4>
-                                          <div className="flex flex-col text-sm">
-                                            {data.student.registrationNumber && (
-                                              <span className="text-amber-600 font-medium">Reg: {data.student.registrationNumber}</span>
-                                            )}
-                                            {data.student.email && (
-                                              <span className="text-gray-500">{data.student.email}</span>
-                                            )}
-                                            {!data.student.email && !data.student.registrationNumber && (
-                                              <span className="text-gray-500">ID: {data.student._id.substring(0, 8)}...</span>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className="bg-amber-50 text-amber-600">
-                                          {data.violations.length} Violations
-                                        </Badge>
-                                        <ChevronDown className="h-5 w-5 text-gray-400" />
-                                      </div>
-                                    </div>
-                                  </CollapsibleTrigger>
-                                  <CollapsibleContent>
-                                    <div className="border-t border-gray-200 p-4 bg-gray-50">
-                                      <Table>
-                                        <TableHeader>
-                                          <TableRow className="bg-gray-100">
-                                            <TableHead className="w-[180px]">Time</TableHead>
-                                            <TableHead>Type</TableHead>
-                                            <TableHead>Details</TableHead>
-                                          </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                          {data.violations.sort((a: Violation, b: Violation) =>
-                                            new Date(b.violation.timestamp).getTime() - new Date(a.violation.timestamp).getTime()
-                                          ).map((violation: Violation, vIndex: number) => (
-                                            <TableRow key={vIndex}>
-                                              <TableCell className="text-sm">
-                                                {new Date(violation.violation.timestamp).toLocaleTimeString()}
-                                              </TableCell>
-                                              <TableCell>
-                                                <Badge variant="outline" className="bg-amber-50 text-amber-600">
-                                                  {violation.violation.type}
-                                                </Badge>
-                                              </TableCell>
-                                              <TableCell className="text-sm">
-                                                {violation.violation.key && <span>Key: {violation.violation.key}</span>}
-                                                {violation.violation.count && <span>Count: {violation.violation.count}</span>}
-                                              </TableCell>
-                                            </TableRow>
-                                          ))}
-                                        </TableBody>
-                                      </Table>
-                                      <div className="mt-4 flex justify-end">
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => router.push(`/viewResult/${quiz._id}/student/${data.student._id}`)}
-                                          className="text-xs border-amber-200 text-amber-700 hover:bg-amber-50"
-                                        >
-                                          <Eye className="h-3 w-3 mr-1" />
-                                          View Student
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </CollapsibleContent>
-                                </div>
-                              </Collapsible>
-                            ))
-                          )}
-                        </ScrollArea>
+                        </div>
                       </CardContent>
                     </Card>
 
-                    <div className="flex justify-end">
-                      <Button
-                        variant="ghost"
-                        onClick={fetchLiveViolations}
-                        className="border-amber-200 text-amber-700 hover:bg-amber-50"
-                      >
-                        Refresh Data
-                      </Button>
-                    </div>
-                  </CardContent>
-                </TabsContent>
+                    <Card className="border border-amber-200 bg-white shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-medium text-gray-600">Students with Violations</h4>
+                          <Badge variant="outline" className="bg-amber-50 text-amber-600">
+                            {uniqueStudentCount}
+                          </Badge>
+                        </div>
+                        <div className="mt-2">
+                          <div className="text-2xl font-bold text-amber-600">
+                            {quizStats.activeStudents > 0 ? Math.round((uniqueStudentCount / quizStats.activeStudents) * 100) : 0}%
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            of active students
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                <TabsContent value="results" className="mt-0">
-                  <div className="text-center p-12">
-                    <Button
-                      variant="solid"
-                      onClick={() => router.push(`/viewResult/${quiz._id}`)}
-                      className="bg-green-600 hover:bg-green-700 text-white px-8"
-                    >
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      View Detailed Results
-                    </Button>
-                    <p className="text-sm text-gray-500 mt-4">
-                      View comprehensive student performance analytics and individual responses
-                    </p>
+                    <Card className="border border-amber-200 bg-white shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-medium text-gray-600">Most Common Violation</h4>
+                        </div>
+                        <div className="mt-2">
+                          {mostCommonType ? (
+                            <>
+                              <div className="text-lg font-bold text-gray-800">{mostCommonType}</div>
+                              <div className="text-sm text-gray-500">
+                                {liveViolations.filter(v => v.violation.type === mostCommonType).length} occurrences
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-gray-500">No violations detected</div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                </TabsContent>
-              </Tabs>
-            </div>
 
-            <Separator className="bg-green-100 mt-6" />
+                  <Card className="border border-amber-200 shadow-sm mb-6">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-amber-600" />
+                        Students with Active Violations
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ScrollArea className="h-[300px]">
+                        {Object.keys(groupedViolations).length === 0 ? (
+                          <div className="text-center py-8">
+                            <Shield className="mx-auto h-10 w-10 text-gray-300" />
+                            <p className="mt-2 text-gray-500">No violations detected</p>
+                          </div>
+                        ) : (
+                          Object.values(groupedViolations).map((data: any, index: number) => (
+                            <Collapsible key={data.student._id} className="mb-3">
+                              <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                                <CollapsibleTrigger className="w-full">
+                                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50">
+                                    <div className="flex items-center gap-3">
+                                      <Avatar className="h-10 w-10 border border-gray-200">
+                                        <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${data.student.name}`} />
+                                        <AvatarFallback className="bg-amber-50 text-amber-600">
+                                          {data.student.name.charAt(0)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div>
+                                        <h4 className="font-medium text-gray-800">{data.student.name}</h4>
+                                        <div className="flex flex-col text-sm">
+                                          {data.student.registrationNumber && (
+                                            <span className="text-amber-600 font-medium">Reg: {data.student.registrationNumber}</span>
+                                          )}
+                                          {data.student.email && (
+                                            <span className="text-gray-500">{data.student.email}</span>
+                                          )}
+                                          {!data.student.email && !data.student.registrationNumber && (
+                                            <span className="text-gray-500">ID: {data.student._id.substring(0, 8)}...</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className="bg-amber-50 text-amber-600">
+                                        {data.violations.length} Violations
+                                      </Badge>
+                                      <ChevronDown className="h-5 w-5 text-gray-400" />
+                                    </div>
+                                  </div>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                  <div className="border-t border-gray-200 p-4 bg-gray-50">
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow className="bg-gray-100">
+                                          <TableHead className="w-[180px]">Time</TableHead>
+                                          <TableHead>Type</TableHead>
+                                          <TableHead>Details</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {data.violations.sort((a: Violation, b: Violation) =>
+                                          new Date(b.violation.timestamp).getTime() - new Date(a.violation.timestamp).getTime()
+                                        ).map((violation: Violation, vIndex: number) => (
+                                          <TableRow key={vIndex}>
+                                            <TableCell className="text-sm">
+                                              {new Date(violation.violation.timestamp).toLocaleTimeString()}
+                                            </TableCell>
+                                            <TableCell>
+                                              <Badge variant="outline" className="bg-amber-50 text-amber-600">
+                                                {violation.violation.type}
+                                              </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-sm">
+                                              {violation.violation.key && <span>Key: {violation.violation.key}</span>}
+                                              {violation.violation.count && <span>Count: {violation.violation.count}</span>}
+                                            </TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                    <div className="mt-4 flex justify-end">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => router.push(`/viewResult/${quiz._id}/student/${data.student._id}`)}
+                                        className="text-xs border-amber-200 text-amber-700 hover:bg-amber-50"
+                                      >
+                                        <Eye className="h-3 w-3 mr-1" />
+                                        View Student
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </CollapsibleContent>
+                              </div>
+                            </Collapsible>
+                          ))
+                        )}
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+
+                  <div className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      onClick={fetchLiveViolations}
+                      className="border-amber-200 text-amber-700 hover:bg-amber-50"
+                    >
+                      Refresh Data
+                    </Button>
+                  </div>
+                </CardContent>
+              </TabsContent>
+
+              <TabsContent value="results" className="mt-0">
+                <div className="text-center p-12">
+                  <Button
+                    variant="solid"
+                    onClick={() => router.push(`/viewResult/${quiz._id}`)}
+                    className="bg-green-600 hover:bg-green-700 text-white px-8"
+                  >
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    View Detailed Results
+                  </Button>
+                  <p className="text-sm text-gray-500 mt-4">
+                    View comprehensive student performance analytics and individual responses
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
           </Card>
         </motion.div>
       </div>
