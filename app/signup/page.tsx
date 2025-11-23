@@ -4,10 +4,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import axios from "axios";
-import { Button } from "../components/ui/button"; // Adjusted the path
+import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Card } from "../components/ui/card";
-import { Loader2, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { Label } from "../components/ui/label";
+import { Loader2, Mail, Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
@@ -26,14 +26,13 @@ export default function SignUp() {
         confirmPassword: ''
     });
     const [isLoading, setIsLoading] = useState(false);
-    const [showLoading, setShowLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [apiUrl, setApiUrl] = useState('');
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            setApiUrl(window.location.hostname === 'localhost' ? 'http://localhost:4000' : process.env.NEXT_PUBLIC_DEPLOYMENT_URL || 'https://softbackend.run.place');
+            setApiUrl(window.location.hostname === 'localhost' ? 'http://localhost:4000' : process.env.NEXT_PUBLIC_DEPLOYMENT_URL || 'https://softbackendnewrender.onrender.com');
         }
     }, []);
 
@@ -90,22 +89,22 @@ export default function SignUp() {
         const { id, value } = e.target;
         const key = id as keyof typeof errors;
         setFormData({ ...formData, [key]: value });
-        
+
         // Clear error when user starts typing
         if (errors[key]) {
             setErrors({ ...errors, [key]: '' });
         }
     };
 
-    const handleSignUp = async () => {
+    const handleSignUp = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+
         if (!validateForm()) {
             toast.error('Please fix the errors before submitting');
             return;
         }
 
         setIsLoading(true);
-        setShowLoading(false);
-        setTimeout(() => setShowLoading(true), 500); // 500ms delay before showing the loading component
 
         try {
             const response = await axios.post(`${apiUrl}/api/v1/AdminRegistration`, {
@@ -116,7 +115,7 @@ export default function SignUp() {
 
             if (response.status === 201 || response.data.success) {
                 toast.success('Registration successful!');
-                
+
                 if (response.data.activationToken) {
                     const token = response.data.activationToken;
                     toast.info('Please check your email to activate your account.');
@@ -132,7 +131,6 @@ export default function SignUp() {
             toast.error(errorMessage);
         } finally {
             setIsLoading(false);
-            setShowLoading(false);
         }
     };
 
@@ -145,192 +143,201 @@ export default function SignUp() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 px-4">
-            {/* Cute decorative elements */}
-            <div className="absolute top-10 left-10 w-16 h-16 rounded-full bg-green-200 opacity-60"></div>
-            <div className="absolute top-20 right-20 w-24 h-24 rounded-full bg-green-100 opacity-40"></div>
-            <div className="absolute bottom-10 left-1/4 w-20 h-20 rounded-full bg-green-200 opacity-50"></div>
-            <div className="absolute bottom-20 right-1/3 w-12 h-12 rounded-full bg-green-100 opacity-30"></div>
-            
+        <div className="h-screen w-full relative overflow-hidden flex items-center justify-center bg-black">
+            {/* Full Screen Background Image */}
             <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="w-full max-w-[500px] relative z-10"
+                initial={{ scale: 1.1 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 20, repeat: Infinity, repeatType: "reverse", ease: "linear" }}
+                className="absolute inset-0 w-full h-full"
             >
-                <Card className="rounded-3xl shadow-lg bg-white/90 backdrop-blur-md p-8 border-0">
-                    <div className="flex flex-col items-center">
-                        <div className="mb-6">
-                            <Image
-                                src="/SignIn.png"
-                                alt="Sign up illustration"
-                                width={180}
-                                height={180}
-                                priority
-                                className="rounded-2xl"
-                            />
+                <Image
+                    src="/SignIn.png"
+                    alt="Sign Up Background"
+                    layout="fill"
+                    objectFit="cover"
+                    priority
+                    className="opacity-60"
+                />
+            </motion.div>
+
+            {/* Dark Overlay for Readability */}
+            <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/50 to-black/80 backdrop-blur-[2px]"></div>
+
+            {/* Glassmorphism Card */}
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="relative z-10 w-full max-w-md p-6 mx-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden"
+            >
+                {/* Decorative Glow */}
+                <div className="absolute -top-20 -left-20 w-40 h-40 bg-green-500/30 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-emerald-500/30 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div className="relative z-20">
+                    <div className="text-center mb-4">
+                        <div className="inline-flex items-center justify-center w-12 h-12 mb-2 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/20">
+                            <span className="text-white text-2xl font-bold">A</span>
                         </div>
-                        
-                        <div className="text-center mb-8">
-                            <h1 className="text-2xl font-bold text-gray-800 mb-2">Create an account</h1>
-                            <p className="text-gray-600">
-                                Join us today for free
-                            </p>
-                        </div>
-                        
-                        <div className="space-y-5 w-full">
+                        <h1 className="text-2xl font-bold text-white tracking-tight mb-1">Create Account</h1>
+                        <p className="text-gray-300 text-sm">Join us and start managing your classroom</p>
+                    </div>
+
+                    <form onSubmit={handleSignUp} className="space-y-3">
+                        <div className="space-y-3">
                             {/* Name Input */}
-                            <div className="space-y-2">
-                                <div className="relative">
-                                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                        <User size={18} />
+                            <div className="space-y-1">
+                                <Label htmlFor="name" className="text-gray-200 font-medium ml-1 text-xs uppercase tracking-wider">Full Name</Label>
+                                <div className="relative group">
+                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-green-400 transition-colors duration-200">
+                                        <User size={16} />
                                     </div>
                                     <Input
                                         id="name"
                                         type="text"
-                                        placeholder="Full Name"
+                                        placeholder="Enter your full name"
                                         value={formData.name}
                                         onChange={handleChange}
-                                        className={`h-12 pl-12 rounded-xl bg-green-50/80 border-0 ${errors.name ? 'ring-2 ring-red-500' : 'focus:ring-green-300'}`}
+                                        className={`h-10 pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:bg-white/10 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 rounded-lg text-sm ${errors.name ? 'border-red-500 focus:border-red-500' : ''}`}
                                     />
                                 </div>
                                 {errors.name && (
-                                    <motion.p 
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        className="text-sm text-red-500 mt-1 pl-2"
-                                    >
+                                    <p className="text-xs text-red-400 pl-1 font-medium flex items-center gap-1">
+                                        <span className="w-1 h-1 rounded-full bg-red-400 inline-block"></span>
                                         {errors.name}
-                                    </motion.p>
+                                    </p>
                                 )}
                             </div>
-                            
+
                             {/* Email Input */}
-                            <div className="space-y-2">
-                                <div className="relative">
-                                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                        <Mail size={18} />
+                            <div className="space-y-1">
+                                <Label htmlFor="email" className="text-gray-200 font-medium ml-1 text-xs uppercase tracking-wider">Email Address</Label>
+                                <div className="relative group">
+                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-green-400 transition-colors duration-200">
+                                        <Mail size={16} />
                                     </div>
                                     <Input
                                         id="email"
                                         type="email"
-                                        placeholder="Email"
+                                        placeholder="Enter your email"
                                         value={formData.email}
                                         onChange={handleChange}
-                                        className={`h-12 pl-12 rounded-xl bg-green-50/80 border-0 ${errors.email ? 'ring-2 ring-red-500' : 'focus:ring-green-300'}`}
+                                        className={`h-10 pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:bg-white/10 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 rounded-lg text-sm ${errors.email ? 'border-red-500 focus:border-red-500' : ''}`}
                                     />
                                 </div>
                                 {errors.email && (
-                                    <motion.p 
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        className="text-sm text-red-500 mt-1 pl-2"
-                                    >
+                                    <p className="text-xs text-red-400 pl-1 font-medium flex items-center gap-1">
+                                        <span className="w-1 h-1 rounded-full bg-red-400 inline-block"></span>
                                         {errors.email}
-                                    </motion.p>
+                                    </p>
                                 )}
                             </div>
-                            
+
                             {/* Password Input */}
-                            <div className="space-y-2">
-                                <div className="relative">
-                                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                        <Lock size={18} />
+                            <div className="space-y-1">
+                                <Label htmlFor="password" className="text-gray-200 font-medium ml-1 text-xs uppercase tracking-wider">Password</Label>
+                                <div className="relative group">
+                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-green-400 transition-colors duration-200">
+                                        <Lock size={16} />
                                     </div>
                                     <Input
                                         id="password"
                                         type={showPassword ? "text" : "password"}
-                                        placeholder="Password"
+                                        placeholder="Create a password"
                                         value={formData.password}
                                         onChange={handleChange}
-                                        className={`h-12 pl-12 pr-12 rounded-xl bg-green-50/80 border-0 ${errors.password ? 'ring-2 ring-red-500' : 'focus:ring-green-300'}`}
+                                        className={`h-10 pl-10 pr-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:bg-white/10 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 rounded-lg text-sm ${errors.password ? 'border-red-500 focus:border-red-500' : ''}`}
                                     />
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={togglePasswordVisibility}
-                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200 transition-colors p-1 hover:bg-white/10 rounded-lg"
                                     >
-                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                     </button>
                                 </div>
                                 {errors.password && (
-                                    <motion.p 
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        className="text-sm text-red-500 mt-1 pl-2"
-                                    >
+                                    <p className="text-xs text-red-400 pl-1 font-medium flex items-center gap-1">
+                                        <span className="w-1 h-1 rounded-full bg-red-400 inline-block"></span>
                                         {errors.password}
-                                    </motion.p>
+                                    </p>
                                 )}
                             </div>
-                            
+
                             {/* Confirm Password Input */}
-                            <div className="space-y-2">
-                                <div className="relative">
-                                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                        <Lock size={18} />
+                            <div className="space-y-1">
+                                <Label htmlFor="confirmPassword" className="text-gray-200 font-medium ml-1 text-xs uppercase tracking-wider">Confirm Password</Label>
+                                <div className="relative group">
+                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-green-400 transition-colors duration-200">
+                                        <Lock size={16} />
                                     </div>
                                     <Input
                                         id="confirmPassword"
                                         type={showConfirmPassword ? "text" : "password"}
-                                        placeholder="Confirm Password"
+                                        placeholder="Confirm your password"
                                         value={formData.confirmPassword}
                                         onChange={handleChange}
-                                        className={`h-12 pl-12 pr-12 rounded-xl bg-green-50/80 border-0 ${errors.confirmPassword ? 'ring-2 ring-red-500' : 'focus:ring-green-300'}`}
+                                        className={`h-10 pl-10 pr-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:bg-white/10 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 rounded-lg text-sm ${errors.confirmPassword ? 'border-red-500 focus:border-red-500' : ''}`}
                                     />
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={toggleConfirmPasswordVisibility}
-                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200 transition-colors p-1 hover:bg-white/10 rounded-lg"
                                     >
-                                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                     </button>
                                 </div>
                                 {errors.confirmPassword && (
-                                    <motion.p 
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        className="text-sm text-red-500 mt-1 pl-2"
-                                    >
+                                    <p className="text-xs text-red-400 pl-1 font-medium flex items-center gap-1">
+                                        <span className="w-1 h-1 rounded-full bg-red-400 inline-block"></span>
                                         {errors.confirmPassword}
-                                    </motion.p>
+                                    </p>
                                 )}
                             </div>
-                            
-                            <motion.div
-                                whileHover={{ scale: 1.01 }}
-                                whileTap={{ scale: 0.99 }}
-                                className="mt-6"
-                            >
-                                <Button
-                                    className="w-full h-12 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium"
-                                    onClick={handleSignUp}
-                                    disabled={isLoading}
-                                >
-                                    {isLoading ? (
-                                        <div className="flex items-center justify-center">
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            <span>Creating your account...</span>
-                                        </div>
-                                    ) : (
-                                        'Sign Up'
-                                    )}
-                                </Button>
-                            </motion.div>
                         </div>
 
-                        <div className="text-center mt-8">
-                            <span className="text-gray-500 text-sm">Already have an account?</span>
-                            <Button
-                                variant="link"
-                                className="text-green-600 hover:text-green-800 text-sm font-medium"
-                                onClick={() => router.push('/')}
-                            >
-                                Sign In
-                            </Button>
+                        <Button
+                            type="submit"
+                            className="w-full h-11 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl font-bold text-base shadow-lg shadow-green-900/20 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 mt-2"
+                            disabled={isLoading}
+                        >
+                            {isLoading ? (
+                                <div className="flex items-center justify-center gap-2">
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    <span>Creating account...</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-center gap-2">
+                                    <span>Sign Up</span>
+                                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                                </div>
+                            )}
+                        </Button>
+
+                        <div className="relative my-4">
+                            <div className="absolute inset-0 flex items-center">
+                                <span className="w-full border-t border-white/10"></span>
+                            </div>
+                            <div className="relative flex justify-center text-xs">
+                                <span className="px-4 bg-transparent text-gray-400 font-medium backdrop-blur-sm">Or</span>
+                            </div>
                         </div>
-                    </div>
-                </Card>
+
+                        <div className="flex justify-center">
+                            <p className="text-gray-400 text-xs">
+                                Already have an account?{' '}
+                                <button
+                                    type="button"
+                                    onClick={() => router.push('/')}
+                                    className="text-green-400 hover:text-green-300 font-bold hover:underline transition-all ml-1"
+                                >
+                                    Sign in
+                                </button>
+                            </p>
+                        </div>
+                    </form>
+                </div>
             </motion.div>
         </div>
     );
