@@ -291,7 +291,7 @@ export default function Home() {
                         {/* Sign Up Link */}
                         <div className="flex justify-center">
                             <p className="text-gray-400 text-sm">
-                                Don't have an account?{' '}
+                                Don&apos;t have an account?{' '}
                                 <button
                                     type="button"
                                     onClick={() => router.push('/signup')}

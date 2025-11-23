@@ -13,18 +13,23 @@ import PageWrapper from "./components/PageWrapper";
 import { Toaster } from 'sonner';
 import axios from 'axios';
 import { useEffect } from "react";
+import { usePathname } from 'next/navigation';
 
 const inter = Inter({ subsets: ["latin"] });
 
 // Component to handle main content margin based on sidebar state
 const MainContent = ({ children }: { children: React.ReactNode }) => {
   const { isCollapsed, isMobile } = useSidebar();
+  const pathname = usePathname();
+
+  // Check if current page is an auth page
+  const isAuthPage = ['/', '/sign-in', '/signup', '/forgot-password', '/reset-password'].includes(pathname) || pathname.startsWith('/activate');
 
   // Calculate margin based on sidebar state
-  // Mobile: ml-0 (sidebar is overlay)
+  // Mobile or Auth Page: ml-0
   // Desktop Collapsed: ml-20
   // Desktop Expanded: ml-72
-  const marginLeft = isMobile ? 'ml-0' : (isCollapsed ? 'ml-20' : 'ml-72');
+  const marginLeft = (isMobile || isAuthPage) ? 'ml-0' : (isCollapsed ? 'ml-20' : 'ml-72');
 
   return (
     <main className={`min-h-screen bg-gray-50 transition-all duration-300 ease-out ${marginLeft}`}>
@@ -67,8 +72,6 @@ export default function RootLayout({
 
     const refreshToken = async () => {
       try {
-        const apiUrl = window.location.hostname === 'localhost'
-          ? 'http://localhost:4000'
         const apiUrl = window.location.hostname === 'localhost'
           ? 'http://localhost:4000'
           : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
@@ -145,17 +148,6 @@ export default function RootLayout({
               </SidebarProvider>
             </EssayProvider>
           </QuizProvider>
-          <LayoutProvider>
-            <QuizProvider>
-              <EssayProvider>
-                <Navbar />
-                <PageWrapper>
-                  {children}
-                </PageWrapper>
-                <Toaster position="top-center" richColors />
-              </EssayProvider>
-            </QuizProvider>
-          </LayoutProvider>
         </AdminProvider>
       </body>
     </html>
