@@ -1,314 +1,745 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
-import { Checkbox } from '../../components/ui/checkbox';
-import { Label } from '../../components/ui/label';
-import { PlusCircle, MinusCircle, Save, ArrowLeft, Loader2 } from 'lucide-react';
-import { Separator } from '../../components/ui/separator';
-import { toast } from 'sonner';
-import { Breadcrumbs } from '../../components/ui/Breadcrumbs';
+import { Button } from '@nextui-org/button';
+import { useAdmin } from '../../context/AdminContext';
+import axios from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  FileText,
+  Clock,
+  Calendar,
+  Key,
+  Save,
+  X,
+  PlusCircle,
+  Trash2,
+  CheckCircle,
+  ListChecks,
+  Edit3,
+  HelpCircle,
+  ChevronDown,
+  RefreshCw,
+  Loader2,
+  ArrowLeft
+} from 'lucide-react';
+
 interface Option {
-    text: string;
-    isCorrect: boolean;
-    _id: string;
+  text: string;
+  isCorrect: boolean;
+  _id?: string;
 }
 
 interface Question {
-    questionText: string;
-    options: Option[];
-    _id: string;
+  questionText: string;
+  options: Option[];
+  pointsForQuestion: number;
+  _id?: string;
 }
 
 interface Quiz {
-    _id: string;
-    title: string;
-    description: string;
-    questions: Question[];
+  _id: string;
+  title: string;
+  description: string;
+  questions: Question[];
+  timeLimit: number;
+  password: string;
+  startDate: string;
+  endDate: string;
+  intendedBatch: number;
+  guidelines: string[];
 }
 
-export default function EditQuiz() {
-    const router = useRouter();
-    const { id } = useParams();
-    const [editableQuiz, setEditableQuiz] = useState<Quiz | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
+export default function EditQuizForm() {
+  const { admin } = useAdmin();
+  const router = useRouter();
+  const params = useParams();
+  const id = params?.id as string;
 
-    useEffect(() => {
-        const fetchQuiz = async () => {
-            setIsLoading(true);
-            let apiUrl;
-            if (typeof window !== 'undefined') {
-                apiUrl = window.location.hostname === 'localhost' 
-                    ? 'http://localhost:4000' 
-                    : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
-            }
-            try {
-                const response = await fetch(`${apiUrl}/api/v1/${id}`);
-                const data = await response.json();
-                setEditableQuiz(data.assignment);
-            } catch (error) {
-                console.error('Error fetching quiz:', error);
-                toast.error('Failed to load quiz');
-            } finally {
-                setIsLoading(false);
-            }
-        };
+  const [isLoading, setIsLoading] = useState(true);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [timeLimit, setTimeLimit] = useState(30);
+  const [password, setPassword] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+  const [showAlert, setShowAlert] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [intendedBatch, setIntendedBatch] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
+  const [maxRetries] = useState(3);
 
-        if (id) {
-            fetchQuiz();
-        }
-    }, [id]);
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, questionIndex: number, optionIndex?: number) => {
-        if (!editableQuiz) return;
-        
-        const { name, value, checked, type } = e.target;
-        const updatedQuestions = [...editableQuiz.questions];
-
-        if (optionIndex !== undefined) {
-            if (name === 'text' || name === 'isCorrect') {
-                updatedQuestions[questionIndex].options[optionIndex] = {
-                    ...updatedQuestions[questionIndex].options[optionIndex],
-                    [name]: type === 'checkbox' ? checked : value
-                };
-            }
-        } else if (name === 'questionText') {
-            updatedQuestions[questionIndex].questionText = value;
+  // Fetch quiz data
+  useEffect(() => {
+    const fetchQuiz = async () => {
+      if (!id) return;
+      
+      setIsLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        let apiUrl;
+        if (typeof window !== 'undefined') {
+          apiUrl = window.location.hostname === 'localhost' 
+            ? 'http://localhost:4000' 
+            : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
         }
 
-        setEditableQuiz({
-            ...editableQuiz,
-            questions: updatedQuestions
+        const response = await axios.get(`${apiUrl}/api/v1/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
-    };
 
-    const addOption = (questionIndex: number) => {
-        if (!editableQuiz) return;
+        const quiz = response.data.assignment;
         
-        const updatedQuestions = [...editableQuiz.questions];
-        const newOption: Option = {
-            text: '',
-            isCorrect: false,
-            _id: `${Date.now()}`
-        };
-        updatedQuestions[questionIndex].options.push(newOption);
-        setEditableQuiz({
-            ...editableQuiz,
-            questions: updatedQuestions
-        });
-    };
-
-    const removeOption = (questionIndex: number, optionIndex: number) => {
-        if (!editableQuiz) return;
+        // Populate form fields
+        setTitle(quiz.title);
+        setDescription(quiz.description);
+        setTimeLimit(quiz.timeLimit);
+        setPassword(quiz.password || '');
+        setIntendedBatch(quiz.intendedBatch?.toString() || '');
         
-        const updatedQuestions = [...editableQuiz.questions];
-        updatedQuestions[questionIndex].options.splice(optionIndex, 1);
-        setEditableQuiz({
-            ...editableQuiz,
-            questions: updatedQuestions
-        });
-    };
-
-    const addQuestion = () => {
-        if (!editableQuiz) return;
-        
-        const newQuestion: Question = {
-            questionText: '',
-            options: [{ text: '', isCorrect: false, _id: `${Date.now()}` }],
-            _id: `${Date.now()}`
-        };
-        setEditableQuiz({
-            ...editableQuiz,
-            questions: [...editableQuiz.questions, newQuestion]
-        });
-    };
-
-    const removeQuestion = (questionIndex: number) => {
-        if (!editableQuiz) return;
-        
-        const updatedQuestions = [...editableQuiz.questions];
-        updatedQuestions.splice(questionIndex, 1);
-        setEditableQuiz({
-            ...editableQuiz,
-            questions: updatedQuestions
-        });
-    };
-
-    const handleSave = async () => {
-        if (!editableQuiz) return;
-        
-        setIsSaving(true);
-        const quizToUpdate = {
-            title: editableQuiz.title,
-            description: editableQuiz.description,
-            questions: editableQuiz.questions.map(({ _id, options, ...restQuestion }) => ({
-                ...restQuestion,
-                options: options.map(({ _id, ...restOption }) => restOption)
-            }))
-        };
-
-        try {
-            let apiUrl = window.location.hostname === 'localhost' 
-                ? 'http://localhost:4000' 
-                : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
-                
-            const response = await fetch(`${apiUrl}/api/v1/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(quizToUpdate)
-            });
-
-            if (response.ok) {
-                toast.success('Quiz updated successfully!');
-                router.push('/dashboard');
-            } else {
-                toast.error('Failed to update quiz');
-            }
-        } catch (error) {
-            console.error('Error updating quiz:', error);
-            toast.error('Error updating quiz');
-        } finally {
-            setIsSaving(false);
+        // Format dates for datetime-local input
+        if (quiz.startDate) {
+          const start = new Date(quiz.startDate);
+          setStartDate(start.toISOString().slice(0, 16));
         }
+        if (quiz.endDate) {
+          const end = new Date(quiz.endDate);
+          setEndDate(end.toISOString().slice(0, 16));
+        }
+
+        // Format questions
+        const formattedQuestions = quiz.questions.map((q: any) => ({
+          questionText: q.questionText,
+          options: q.options.map((opt: any) => ({
+            text: opt.text,
+            isCorrect: opt.isCorrect,
+            _id: opt._id
+          })),
+          pointsForQuestion: q.pointsForQuestion || 1,
+          _id: q._id
+        }));
+        
+        setQuestions(formattedQuestions);
+        
+      } catch (error) {
+        console.error('Error fetching quiz:', error);
+        setAlertMessage('Failed to load quiz data');
+        setShowAlert(true);
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 2000);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    if (isLoading) {
-        return (
-            <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12 px-4">
-                <div className="max-w-4xl mx-auto">
-                    <Breadcrumbs items={[{ label: 'Loading Quiz...' }]} />
-                    <div className="flex items-center justify-center min-h-[60vh]">
-                        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
-                    </div>
-                </div>
-            </div>
-        );
+    fetchQuiz();
+  }, [id, router]);
+
+  const addQuestion = (afterIndex: number | null = null) => {
+    const newQuestion: Question = {
+      questionText: '',
+      options: [
+        { text: '', isCorrect: false },
+        { text: '', isCorrect: false },
+        { text: '', isCorrect: false },
+        { text: '', isCorrect: false }
+      ],
+      pointsForQuestion: 1
+    };
+
+    if (afterIndex === null) {
+      setQuestions([...questions, newQuestion]);
+    } else {
+      const newQuestions = [...questions];
+      newQuestions.splice(afterIndex + 1, 0, newQuestion);
+      setQuestions(newQuestions);
+    }
+  };
+
+  const deleteQuestion = (index: number) => {
+    if (questions.length === 1) {
+      setAlertMessage('You need at least one question');
+      setShowAlert(true);
+      setTimeout(() => {
+        setShowAlert(false);
+        setAlertMessage('');
+      }, 2000);
+      return;
     }
 
+    setQuestions(prev => prev.filter((_, qIndex) => qIndex !== index));
+    setAlertMessage(`Deleted question ${index + 1}`);
+    setShowAlert(true);
+    setTimeout(() => {
+      setShowAlert(false);
+      setAlertMessage('');
+    }, 1500);
+  };
+
+  const validateForm = () => {
+    if (!title.trim()) {
+      setAlertMessage('Assignment title is required.');
+      setShowAlert(true);
+      return false;
+    }
+
+    if (questions.some((q) => !q.questionText.trim())) {
+      setAlertMessage('Each question must have text.');
+      setShowAlert(true);
+      return false;
+    }
+
+    if (questions.some((q) => q.options.some((answer) => !answer.text.trim()))) {
+      setAlertMessage('All answers must have text.');
+      setShowAlert(true);
+      return false;
+    }
+
+    const invalidQuestions = questions.filter(q => !q.options.some(opt => opt.isCorrect));
+    if (invalidQuestions.length > 0) {
+      setAlertMessage('Each question must have at least one correct answer.');
+      setShowAlert(true);
+      return false;
+    }
+
+    if (!password.trim()) {
+      setAlertMessage('Password is required.');
+      setShowAlert(true);
+      return false;
+    }
+
+    return true;
+  };
+
+  interface SubmitResponse {
+    data: {
+      success: boolean;
+      message?: string;
+      assignment?: any;
+    };
+    status: number;
+    statusText: string;
+  }
+
+  const submitWithRetry = async (
+    endpoint: string, 
+    data: any, 
+    token: string
+  ): Promise<SubmitResponse> => {
+    let attempt = 0;
+    let lastError: any;
+
+    while (attempt <= maxRetries) {
+      try {
+        if (attempt > 0) {
+          setRetryCount(attempt);
+          setAlertMessage(`Retrying... Attempt ${attempt} of ${maxRetries}`);
+        }
+
+        const timeout = 20000 + (attempt * 10000);
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Request timed out')), timeout)
+        );
+
+        const response = await Promise.race([
+          axios.put<{ success: boolean; message?: string; assignment?: any }>(
+            endpoint, 
+            data, 
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          ),
+          timeoutPromise
+        ]);
+
+        return {
+          data: response.data,
+          status: response.status,
+          statusText: response.statusText
+        };
+      } catch (error) {
+        lastError = error;
+        console.error(`Attempt ${attempt + 1} failed:`, error);
+
+        if ((error as Error).message !== 'Request timed out' || attempt === maxRetries) {
+          break;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
+        attempt++;
+      }
+    }
+
+    throw lastError;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    setRetryCount(0);
+    setAlertMessage('Processing your request...');
+    setShowAlert(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setAlertMessage('No authentication token found. Please login.');
+        setShowAlert(true);
+        router.push('/login');
+        return;
+      }
+
+      let apiUrl;
+      if (typeof window !== 'undefined') {
+        apiUrl = window.location.hostname === 'localhost' 
+          ? 'http://localhost:4000' 
+          : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+      }
+
+      const formatDate = (dateString: string) => {
+        if (!dateString.includes('Z')) {
+          return new Date(dateString).toISOString();
+        }
+        return dateString;
+      };
+
+      const assignmentData = {
+        title,
+        description,
+        timeLimit,
+        password,
+        intendedBatch: parseInt(intendedBatch) || 0,
+        teacherId: admin?._id,
+        startDate: formatDate(startDate),
+        endDate: formatDate(endDate),
+        guidelines: ["Guideline 1", "Guideline 2", "Guideline 3", "Guideline 4"],
+        questions: questions.map((q) => ({
+          questionText: q.questionText,
+          options: q.options.map((opt) => ({
+            text: opt.text,
+            isCorrect: opt.isCorrect,
+          })),
+          pointsForQuestion: q.pointsForQuestion,
+        }))
+      };
+
+      console.log("Sending update data:", JSON.stringify(assignmentData, null, 2));
+
+      const endpoint = `${apiUrl}/api/v1/${id}`;
+      console.log("Sending to endpoint:", endpoint);
+
+      const response: SubmitResponse = await submitWithRetry(endpoint, assignmentData, token);
+
+      if (response.status === 200 || response.data.success) {
+        setAlertMessage('Quiz updated successfully!');
+        setShowAlert(true);
+        setTimeout(() => {
+          setShowAlert(false);
+          router.push('/dashboard');
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Error updating assignment:', error);
+
+      if (error instanceof Error && error.message === 'Request timed out') {
+        setAlertMessage(`Request timed out after ${maxRetries} attempts. The server is not responding.`);
+      } else if (axios.isAxiosError(error) && error.response) {
+        console.error('Server error details:', error.response.data);
+        setAlertMessage(`Error (${error.response.status}): ${error.response.data?.message || 'Server returned an error'}`);
+      } else if (axios.isAxiosError(error) && error.request) {
+        setAlertMessage('No response received from server. Check your network connection.');
+      } else {
+        setAlertMessage(`Error: ${(error as Error).message}`);
+      }
+
+      setShowAlert(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const setMarks = (value: string, questionIndex: number) => {
+    const marks = parseInt(value);
+    if (isNaN(marks) || marks < 0) return;
+
+    setQuestions(prev => {
+      const updated = [...prev];
+      if (updated[questionIndex]) {
+        updated[questionIndex].pointsForQuestion = marks;
+      }
+      return updated;
+    });
+  };
+
+  if (isLoading) {
     return (
-        <div className="container mx-auto py-8 px-4 max-w-4xl">
-            {editableQuiz && (
-                    <Breadcrumbs 
-                        items={[
-                            { label: editableQuiz.title, href: '/viewquiz' },
-                            { label: 'Edit' }
-                        ]} 
-                    />
-                )}
-            <Card className="mb-8">
-                <CardHeader>
-                    <CardTitle className="text-3xl">{editableQuiz?.title}</CardTitle>
-                    <CardDescription className="text-lg">{editableQuiz?.description}</CardDescription>
-                </CardHeader>
-            </Card>
-
-            {editableQuiz?.questions.map((question, questionIndex) => (
-                <Card key={question._id} className="mb-6">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="text-xl">Question {questionIndex + 1}</CardTitle>
-                        <Button
-                            variant="destructive"
-                            size="icon"
-                            onClick={() => removeQuestion(questionIndex)}
-                        >
-                            <MinusCircle className="h-4 w-4" />
-                        </Button>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            <Input
-                                name="questionText"
-                                value={question.questionText}
-                                onChange={(e) => handleInputChange(e, questionIndex)}
-                                placeholder="Enter your question"
-                                className="text-lg"
-                            />
-                            
-                            <div className="space-y-3">
-                                {question.options.map((option, optionIndex) => (
-                                    <div key={option._id} className="flex items-center space-x-4">
-                                        <Input
-                                            name="text"
-                                            value={option.text}
-                                            onChange={(e) => handleInputChange(e, questionIndex, optionIndex)}
-                                            placeholder={`Option ${optionIndex + 1}`}
-                                        />
-                                        <div className="flex items-center space-x-2">
-                                            <Checkbox
-                                                id={`correct-${questionIndex}-${optionIndex}`}
-                                                name="isCorrect"
-                                                checked={option.isCorrect}
-                                                onCheckedChange={(checked) => 
-                                                    handleInputChange(
-                                                        { target: { name: 'isCorrect', type: 'checkbox', checked: checked as boolean } } as any,
-                                                        questionIndex,
-                                                        optionIndex
-                                                    )
-                                                }
-                                            />
-                                            <Label htmlFor={`correct-${questionIndex}-${optionIndex}`}>
-                                                Correct
-                                            </Label>
-                                        </div>
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            onClick={() => removeOption(questionIndex, optionIndex)}
-                                        >
-                                            <MinusCircle className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                ))}
-                            </div>
-                            
-                            <Button
-                                variant="outline"
-                                onClick={() => addOption(questionIndex)}
-                                className="w-full"
-                            >
-                                <PlusCircle className="h-4 w-4 mr-2" />
-                                Add Option
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            ))}
-
-            <div className="flex flex-col space-y-4 mt-8">
-                <Button onClick={addQuestion} variant="outline" className="w-full">
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Add Question
-                </Button>
-
-                <Separator className="my-4" />
-
-                <div className="flex space-x-4">
-                    <Button
-                        variant="outline"
-                        onClick={() => router.push('/dashboard')}
-                        className="w-full"
-                    >
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Back to Dashboard
-                    </Button>
-                    <Button
-                        onClick={handleSave}
-                        className="w-full"
-                        disabled={isSaving}
-                    >
-                        {isSaving ? (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                            <Save className="h-4 w-4 mr-2" />
-                        )}
-                        Save Changes
-                    </Button>
-                </div>
-            </div>
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading quiz data...</p>
         </div>
+      </div>
     );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white p-4 md:p-8">
+      {/* Decorative elements */}
+      <div className="fixed top-20 right-40 w-64 h-64 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+      <div className="fixed bottom-40 left-20 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden relative z-10"
+      >
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-500 to-green-500 p-6 text-white">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl md:text-3xl font-bold flex items-center">
+              <Edit3 className="mr-3 h-6 w-6" />
+              Edit Quiz Assignment
+            </h1>
+            <motion.button
+              onClick={() => router.push('/dashboard')}
+              className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl backdrop-blur-sm transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back</span>
+            </motion.button>
+          </div>
+          <p className="mt-2 text-blue-50">Update your quiz assignment details</p>
+        </div>
+
+        {/* Alert popup */}
+        <AnimatePresence>
+          {showAlert && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+            >
+              <div className="bg-white p-6 rounded-xl shadow-xl max-w-md w-full">
+                {alertMessage.includes('Retrying') && (
+                  <div className="flex justify-center mb-3">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    >
+                      <RefreshCw className="h-6 w-6 text-blue-500" />
+                    </motion.div>
+                  </div>
+                )}
+
+                <p className={`text-lg ${
+                  alertMessage.includes('Error') || alertMessage.includes('timed out')
+                    ? 'text-red-600'
+                    : alertMessage.includes('Processing') || alertMessage.includes('Retrying')
+                    ? 'text-blue-600'
+                    : 'text-green-600'
+                  } font-medium mb-4 text-center`}>
+                  {alertMessage}
+                </p>
+
+                {!alertMessage.includes('Processing') && !alertMessage.includes('Retrying') && (
+                  <Button
+                    color={
+                      alertMessage.includes('Error') || alertMessage.includes('timed out')
+                        ? "danger"
+                        : "success"
+                    }
+                    className="w-full"
+                    onClick={() => setShowAlert(false)}
+                  >
+                    OK
+                  </Button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="p-8">
+          {/* Title and Description */}
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Assignment Title</label>
+              <input
+                type="text"
+                placeholder="e.g., Geography Quiz"
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Assignment Description</label>
+              <textarea
+                placeholder="Provide instructions for your students"
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all min-h-[100px]"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Time and Date Settings */}
+          <div className="mt-8 p-6 bg-blue-50 rounded-xl border border-blue-100">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <Clock className="mr-2 h-5 w-5 text-blue-600" />
+              Time Settings
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Time Limit (Minutes)
+                </label>
+                <input
+                  type="number"
+                  value={timeLimit}
+                  onChange={(e) => setTimeLimit(Number(e.target.value))}
+                  className="p-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full"
+                  min="1"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Start Date
+                </label>
+                <input
+                  type="datetime-local"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="p-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  End Date
+                </label>
+                <input
+                  type="datetime-local"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="p-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Questions Section */}
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+                <HelpCircle className="mr-2 h-5 w-5 text-blue-600" />
+                Quiz Questions
+              </h2>
+
+              <motion.button
+                onClick={() => addQuestion()}
+                className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>Add Question</span>
+              </motion.button>
+            </div>
+
+            <AnimatePresence mode="popLayout">
+              {questions.map((q, qIndex) => (
+                <motion.div
+                  key={qIndex}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="mb-8 p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium text-gray-800">Question {qIndex + 1}</h3>
+                    <motion.button
+                      onClick={() => deleteQuestion(qIndex)}
+                      className="text-red-500 hover:text-red-700 flex items-center space-x-1"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="text-sm">Delete</span>
+                    </motion.button>
+                  </div>
+
+                  <div className="mb-4">
+                    <input
+                      type="text"
+                      placeholder="Enter your question"
+                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
+                      value={q.questionText}
+                      onChange={(e) =>
+                        setQuestions((prev) => {
+                          const updated = [...prev];
+                          updated[qIndex].questionText = e.target.value;
+                          return updated;
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-gray-700">Answer Options:</p>
+                    {q.options.map((option, aIndex) => (
+                      <div key={aIndex} className="flex items-center space-x-3">
+                        <div className="flex-1">
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder={`Option ${aIndex + 1}`}
+                              className="w-full pl-3 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
+                              value={option.text}
+                              onChange={(e) =>
+                                setQuestions((prev) => {
+                                  const updated = [...prev];
+                                  updated[qIndex].options[aIndex].text = e.target.value;
+                                  return updated;
+                                })
+                              }
+                            />
+                            {option.isCorrect && (
+                              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                <CheckCircle className="h-5 w-5 text-green-500" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`q${qIndex}-a${aIndex}`}
+                            checked={option.isCorrect}
+                            onChange={(e) => {
+                              setQuestions((prev) => {
+                                const updated = [...prev];
+                                updated[qIndex].options[aIndex].isCorrect = e.target.checked;
+                                return updated;
+                              });
+                            }}
+                            className="w-4 h-4 text-green-600 focus:ring-green-500 rounded"
+                          />
+                          <label htmlFor={`q${qIndex}-a${aIndex}`} className="text-sm font-medium text-gray-700">
+                            Correct
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-8">
+                    <label className="flex items-center text-sm font-semibold mb-2 text-gray-700">
+                      <Key className="mr-2 h-4 w-4 text-blue-600" />
+                      Marks For the Question
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="Enter Marks"
+                      value={q.pointsForQuestion}
+                      onChange={(e) => setMarks(e.target.value, qIndex)}
+                      className="p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full md:w-1/3"
+                    />
+                  </div>
+
+                  <div className="mt-4 flex justify-center">
+                    <motion.button
+                      onClick={() => addQuestion(qIndex)}
+                      className="flex items-center space-x-2 text-green-600 hover:text-green-700 px-4 py-2 rounded-xl bg-green-50 hover:bg-green-100 transition-colors"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                      <span>Add Question</span>
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {/* Password */}
+          <div className="mt-8">
+            <label className="flex items-center text-sm font-semibold mb-2 text-gray-700">
+              <Key className="mr-2 h-4 w-4 text-blue-600" />
+              Assignment Password
+            </label>
+            <input
+              type="password"
+              placeholder="Enter Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full md:w-1/3"
+            />
+            <p className="mt-1 text-sm text-gray-500">Students will need this password to access the assignment</p>
+          </div>
+
+          {/* Intended Batch */}
+          <div className='mt-8'>
+            <label className="flex items-center text-sm font-semibold mb-2 text-gray-700">
+              <ListChecks className="mr-2 h-4 w-4 text-blue-600" />
+              Intended Batch
+            </label>
+            <input
+              type="text"
+              placeholder="Enter intended batch (e.g., 2023-2024)"
+              value={intendedBatch}
+              onChange={(e) => setIntendedBatch(e.target.value)}
+              className="p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full md:w-1/3"
+            />
+          </div>
+
+          {/* Buttons */}
+          <div className="mt-12 flex flex-col md:flex-row gap-4 justify-end">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                color="danger"
+                variant="flat"
+                onClick={() => router.push('/dashboard')}
+                className="flex items-center justify-center w-full md:w-auto"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                color="primary"
+                onClick={handleSubmit}
+                isLoading={isSubmitting}
+                className="bg-gradient-to-r from-blue-500 to-green-500 text-white flex items-center justify-center w-full md:w-auto"
+              >
+                {!isSubmitting && <Save className="h-4 w-4 mr-2" />}
+                {isSubmitting ? (retryCount > 0 ? `Retrying... (${retryCount}/${maxRetries})` : 'Updating...') : 'Update Quiz'}
+              </Button>
+            </motion.div>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
 }
