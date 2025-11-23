@@ -16,7 +16,7 @@ const Sidebar = () => {
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const [hoverItem, setHoverItem] = useState<number | null>(null);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
-    
+
     // Ref for the sidebar to detect clicks outside
     const sidebarRef = useRef<HTMLDivElement>(null);
 
@@ -59,7 +59,7 @@ const Sidebar = () => {
             handleResize();
             window.addEventListener('resize', handleResize);
             document.addEventListener('mousedown', handleClickOutside);
-            
+
             return () => {
                 window.removeEventListener('resize', handleResize);
                 document.removeEventListener('mousedown', handleClickOutside);
@@ -69,7 +69,7 @@ const Sidebar = () => {
 
     const handleLogout = async () => {
         setIsLoggingOut(true);
-        
+
         // Simulate a small delay for animation
         setTimeout(() => {
             localStorage.removeItem('token');
@@ -86,10 +86,10 @@ const Sidebar = () => {
     };
 
     const isSignInPage = pathname === '/sign-in';
-    
+
     // Don't render sidebar on sign-in page
     if (isSignInPage) return null;
-    
+
     // Get initials for avatar
     const getInitials = (fullName: string) => {
         if (!fullName) return 'U';
@@ -158,7 +158,7 @@ const Sidebar = () => {
 
     // Mobile menu toggle button with glass effect
     const MobileMenuButton = () => (
-        <motion.button 
+        <motion.button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
             className="md:hidden fixed top-4 left-4 z-50 bg-white/80 backdrop-blur-md p-2.5 rounded-full shadow-lg border border-green-100"
             whileHover={{ scale: 1.05, boxShadow: "0 8px 20px rgba(0, 128, 0, 0.2)" }}
@@ -182,19 +182,19 @@ const Sidebar = () => {
         <>
             {/* Subtle gradient background */}
             <div className="absolute inset-0 bg-gradient-to-b from-green-50/50 to-white/30 pointer-events-none"></div>
-            
+
             {/* Subtle corner shapes */}
             <div className="absolute -top-20 -right-20 w-40 h-40 bg-green-100 opacity-5 rounded-full"></div>
             <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-100 opacity-5 rounded-full"></div>
-            
+
             {/* Subtle pattern grid */}
             <div className="absolute inset-0 opacity-3 pointer-events-none">
                 {Array(6).fill(0).map((_, i) => (
-                    <div 
+                    <div
                         key={i}
                         className="absolute h-px bg-green-500"
                         style={{
-                            top: `${(i+1) * 16}%`,
+                            top: `${(i + 1) * 16}%`,
                             left: 0,
                             right: 0,
                             opacity: 0.03
@@ -208,11 +208,11 @@ const Sidebar = () => {
     return (
         <>
             <MobileMenuButton />
-            
+
             {/* Backdrop overlay for mobile */}
             <AnimatePresence>
                 {isMobile && showMobileMenu && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -222,13 +222,12 @@ const Sidebar = () => {
                     ></motion.div>
                 )}
             </AnimatePresence>
-            
+
             {/* Sidebar */}
-            <motion.div 
+            <motion.div
                 ref={sidebarRef}
-                className={`fixed inset-y-0 left-0 transform transition-all duration-300 ease-out z-40 ${
-                    isMobile ? (showMobileMenu ? 'translate-x-0 w-72' : '-translate-x-full') : (isCollapsed ? 'w-20' : 'w-72')
-                }`}
+                className={`fixed inset-y-0 left-0 transform transition-all duration-300 ease-out z-40 ${isMobile ? (showMobileMenu ? 'translate-x-0 w-72' : '-translate-x-full') : (isCollapsed ? 'w-20' : 'w-72')
+                    }`}
                 initial={isMobile ? { x: "-100%" } : { x: 0 }}
                 animate={isMobile ? (showMobileMenu ? { x: 0 } : { x: "-100%" }) : { x: 0 }}
                 transition={{ duration: 0.25, type: "spring", stiffness: 200, damping: 28 }}
@@ -238,11 +237,11 @@ const Sidebar = () => {
             >
                 <div className="relative h-full flex flex-col bg-white/90 backdrop-blur-lg border-r border-green-100 overflow-hidden">
                     <SidebarDecorations />
-                    
+
                     {/* Logo and collapse toggle */}
                     <div className="flex items-center justify-between h-16 px-5 py-6 border-b border-green-100 bg-white/50 backdrop-blur-md relative z-10">
                         {!isCollapsed && (
-                            <motion.div 
+                            <motion.div
                                 className="flex items-center"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
@@ -258,8 +257,8 @@ const Sidebar = () => {
                         )}
 
                         {isCollapsed && (
-                            <motion.div 
-                                className="mx-auto" 
+                            <motion.div
+                                className="mx-auto"
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.2 }}
@@ -271,8 +270,8 @@ const Sidebar = () => {
                         )}
 
                         {!isMobile && (
-                            <motion.button 
-                                onClick={() => setIsCollapsed(!isCollapsed)} 
+                            <motion.button
+                                onClick={() => setIsCollapsed(!isCollapsed)}
                                 className="p-1.5 rounded-lg hover:bg-green-100/60 transition-colors duration-200"
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
@@ -289,7 +288,7 @@ const Sidebar = () => {
                     </div>
 
                     {/* User profile section */}
-                    <motion.div 
+                    <motion.div
                         className={`flex flex-col px-4 py-5 border-b border-green-100 relative z-10 ${isCollapsed ? 'items-center' : ''}`}
                         whileHover={{ backgroundColor: "rgba(240, 250, 240, 0.5)" }}
                         onClick={handleProfileClick}
@@ -306,10 +305,10 @@ const Sidebar = () => {
                                 </div>
                                 <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white"></div>
                             </motion.div>
-                            
+
                             <AnimatePresence>
                                 {!isCollapsed && (
-                                    <motion.div 
+                                    <motion.div
                                         className="ml-3"
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
@@ -331,7 +330,7 @@ const Sidebar = () => {
                     <div className="flex-grow overflow-y-auto py-6 relative z-10">
                         <ul className="space-y-2 px-3">
                             {navItems.map((item, index) => (
-                                <motion.li 
+                                <motion.li
                                     key={index}
                                     initial={{ opacity: 0, y: -5 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -341,30 +340,29 @@ const Sidebar = () => {
                                 >
                                     <motion.button
                                         onClick={() => router.push(item.path)}
-                                        className={`relative flex items-center py-3 px-4 w-full rounded-xl cursor-pointer transition-all duration-200 ${
-                                            pathname === item.path 
-                                                ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md' 
+                                        className={`relative flex items-center py-3 px-4 w-full rounded-xl cursor-pointer transition-all duration-200 ${pathname === item.path
+                                                ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md'
                                                 : 'text-gray-700 hover:bg-green-50'
-                                        } ${isCollapsed ? 'justify-center' : ''}`}
+                                            } ${isCollapsed ? 'justify-center' : ''}`}
                                         whileHover={isCollapsed ? { scale: 1.05 } : { scale: 1.01, x: 1 }}
                                         whileTap={{ scale: 0.98 }}
                                     >
                                         {/* Active indicator */}
                                         {pathname === item.path && (
-                                            <motion.div 
+                                            <motion.div
                                                 className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 rounded-r-full bg-white"
                                                 layoutId="activeIndicator"
                                                 transition={{ type: "spring", stiffness: 200, damping: 25 }}
                                             />
                                         )}
-                                        
+
                                         <span className={`flex items-center justify-center ${pathname === item.path ? 'text-white' : 'text-green-600'}`}>
                                             {item.icon}
                                         </span>
-                                        
+
                                         <AnimatePresence>
                                             {!isCollapsed && (
-                                                <motion.span 
+                                                <motion.span
                                                     className="ml-3 font-medium text-sm whitespace-nowrap"
                                                     initial={{ opacity: 0 }}
                                                     animate={{ opacity: 1 }}
@@ -375,7 +373,7 @@ const Sidebar = () => {
                                                 </motion.span>
                                             )}
                                         </AnimatePresence>
-                                        
+
                                         {/* Item description tooltip */}
                                         {isCollapsed && hoverItem === index && (
                                             <motion.div
@@ -407,14 +405,14 @@ const Sidebar = () => {
                         >
                             {/* Logout animation */}
                             {isLoggingOut && (
-                                <motion.div 
+                                <motion.div
                                     className="absolute inset-0 bg-red-500"
                                     initial={{ width: 0 }}
                                     animate={{ width: "100%" }}
                                     transition={{ duration: 0.5, ease: "easeInOut" }}
                                 />
                             )}
-                            
+
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className={`h-5 w-5 ${isLoggingOut ? 'text-white' : 'text-red-500'} relative z-10`}
@@ -429,10 +427,10 @@ const Sidebar = () => {
                                 <polyline points="16 17 21 12 16 7"></polyline>
                                 <line x1="21" y1="12" x2="9" y2="12"></line>
                             </svg>
-                            
+
                             <AnimatePresence>
                                 {!isCollapsed && (
-                                    <motion.span 
+                                    <motion.span
                                         className={`ml-3 font-medium text-sm ${isLoggingOut ? 'text-white' : 'text-red-500'} relative z-10`}
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
