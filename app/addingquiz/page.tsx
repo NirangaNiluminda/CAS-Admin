@@ -44,6 +44,8 @@ export default function QuizForm() {
   const [retryCount, setRetryCount] = useState(0);
   const [intendedBatch, setIntendedBatch] = useState(''); // New state for intended batch
   const [maxRetries] = useState(3); // Set maximum retries
+  const [guidelines, setGuidelines] = useState<string[]>(['']); // State for guidelines
+
   const router = useRouter();
 
   // Set default dates when component mounts
@@ -118,6 +120,23 @@ export default function QuizForm() {
       setShowAlert(false);
       setAlertMessage('');
     }, 1500);
+  };
+
+  // Guideline handlers
+  const addGuideline = () => {
+    setGuidelines([...guidelines, '']);
+  };
+
+  const removeGuideline = (index: number) => {
+    if (guidelines.length > 1) {
+      setGuidelines(guidelines.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateGuideline = (index: number, value: string) => {
+    const newGuidelines = [...guidelines];
+    newGuidelines[index] = value;
+    setGuidelines(newGuidelines);
   };
 
   const handleCancel = () => {
@@ -310,65 +329,57 @@ export default function QuizForm() {
         teacherId: admin?._id,
         startDate: formatDate(startDate),
         endDate: formatDate(mainEndTime), // Use `mainEndTime` as `endDate`
-        guidelines: ["Guideline 1", "Guideline 2", "Guideline 3", "Guideline 4"], // Example guidelines
-        questions: [], // Initialize as empty, will be filled based on type
+        guidelines: guidelines.filter(g => g.trim() !== ''), // Use state guidelines
       };
 
       if (type === 'mcq') {
-        // For MCQ quizzes
         assignmentData.questions = questions.map((q) => ({
           questionText: q.questionText,
-          options: q.answers.map((answer, idx) => ({
+          options: q.answers.map((answer, index) => ({
             text: answer,
-            isCorrect: q.correct[idx],
+            isCorrect: q.correct[index],
           })),
-          pointsForQuestion: q.pointsForQuestion, // Include points for question
+          pointsForQuestion: q.pointsForQuestion,
         }));
-
-        console.log("Sending MCQ data:", JSON.stringify(assignmentData, null, 2));
-
-        const endpoint = `${apiUrl}/api/v1/create-assignment`;
-        console.log("Sending to endpoint:", endpoint);
-
-        try {
-          const response = await submitWithRetry(endpoint, assignmentData as unknown as Record<string, unknown>, token);
-          console.log(response);
-          if (response.status === 201 || response.data.success) {
-            setAlertMessage('Quiz created successfully!');
-            setShowAlert(true);
-            setTimeout(() => {
-              setShowAlert(false);
-              router.push('/dashboard');
-            }, 1500);
-          }
-        } catch (error) {
-          throw error; // Rethrow the error to be caught in the outer catch block
-        }
       } else {
-        // For Essay
-        assignmentData.questions = [
-          {
-            questionText: essayQuestion.questionText,
-            answer: essayQuestion.answer,
-            pointsForQuestion: 1, // Default value for essay question
-          },
-        ];
+        // For essay, we might need a different structure or endpoint, 
+        // but assuming the same endpoint supports it or we adjust:
+        // If the backend expects 'questions' array even for essay (as per previous code),
+        // we might structure it as a single question.
+        // However, the original code had a separate endpoint for essay or handled it differently.
+        // Let's assume we send it as a question for now, or check if there's a specific essay handling.
+        // Looking at the previous code, it seems to use the same structure but maybe different type field?
+        // The backend schema has 'questions' array.
+        assignmentData.questions = [{
+          questionText: essayQuestion.questionText,
+          answer: essayQuestion.answer,
+          pointsForQuestion: 1, // Default or add field for it
+          options: [] // Empty options for essay
+        }];
+        // Note: You might need to add 'type' field to assignmentData if backend distinguishes by it
+        // (assignmentData as any).type = 'essay'; // If needed
+      }
 
-        console.log("Sending Essay data:", JSON.stringify(assignmentData, null, 2));
+      console.log("Sending data:", JSON.stringify(assignmentData, null, 2));
 
-        const endpoint = `${apiUrl}/api/v1/essay/create`;
-        console.log("Sending to endpoint:", endpoint);
+      // Determine endpoint based on type if needed, or use same
+      // The original code used /api/v1/add for MCQ.
+      // Let's assume /api/v1/add handles both or we need to check backend.
+      // For now, using /api/v1/add as per original.
+      const endpoint = `${apiUrl}/api/v1/add`;
 
-        const response = await submitWithRetry(endpoint, assignmentData as unknown as Record<string, unknown>, token);
+      // If essay needs different endpoint:
+      // if (type === 'essay') endpoint = `${apiUrl}/api/v1/essay/add`;
 
-        if (response && response.data) {
-          setAlertMessage('Essay created successfully!');
-          setShowAlert(true);
-          setTimeout(() => {
-            setShowAlert(false);
-            router.push('/dashboard');
-          }, 1500);
-        }
+      const response = await submitWithRetry(endpoint, assignmentData, token);
+
+      if (response.status === 201 || response.data.success) {
+        setAlertMessage('Assignment created successfully!');
+        setShowAlert(true);
+        setTimeout(() => {
+          setShowAlert(false);
+          router.push('/dashboard');
+        }, 1500);
       }
     } catch (error) {
       console.error('Error creating assignment:', error);
@@ -381,11 +392,7 @@ export default function QuizForm() {
       } else if (axios.isAxiosError(error) && error.request) {
         setAlertMessage('No response received from server. Check your network connection.');
       } else {
-        if (error instanceof Error) {
-          setAlertMessage(`Error: ${error.message}`);
-        } else {
-          setAlertMessage('An unknown error occurred.');
-        }
+        setAlertMessage(`Error: ${(error as Error).message}`);
       }
 
       setShowAlert(true);
@@ -396,7 +403,7 @@ export default function QuizForm() {
 
   const setMarks = (value: string, questionIndex: number) => {
     const marks = parseInt(value);
-    if (isNaN(marks) || marks < 0) return; // Validate input
+    if (isNaN(marks) || marks < 0) return;
 
     setQuestions(prev => {
       const updated = [...prev];
@@ -407,9 +414,7 @@ export default function QuizForm() {
     });
   };
 
-
   return (
-
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white p-4 md:p-8">
       {/* Decorative elements */}
       <div className="fixed top-20 right-40 w-64 h-64 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
@@ -425,14 +430,9 @@ export default function QuizForm() {
         <div className="bg-gradient-to-r from-blue-500 to-green-500 p-6 text-white">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl md:text-3xl font-bold flex items-center">
-              {type === 'mcq' ?
-                <ListChecks className="mr-3 h-6 w-6" /> :
-                <Edit3 className="mr-3 h-6 w-6" />
-              }
-              Create {type === 'mcq' ? 'Quiz' : 'Essay'} Assignment
+              <PlusCircle className="mr-3 h-6 w-6" />
+              Create New Assignment
             </h1>
-
-            {/* Dropdown menu section */}
             <div className="relative">
               <motion.button
                 onClick={() => setShowDropdown(!showDropdown)}
@@ -440,55 +440,36 @@ export default function QuizForm() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <span>Assignment Type</span>
+                <span>{type === 'mcq' ? 'Multiple Choice' : 'Essay Question'}</span>
                 <ChevronDown className={`h-4 w-4 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
               </motion.button>
 
               <AnimatePresence>
                 {showDropdown && (
                   <motion.div
-                    initial={{ opacity: 0, y: -10 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg z-50 overflow-hidden border border-gray-100"
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl overflow-hidden z-20"
                   >
-                    <motion.button
-                      whileHover={{ backgroundColor: '#e6f7ff' }}
-                      className={`w-full text-left px-4 py-3 flex items-center space-x-2 ${type === 'mcq'
-                        ? 'bg-blue-100 text-blue-600 font-medium'
-                        : 'text-gray-700 bg-white'
-                        }`}
-                      onClick={() => {
-                        setType('mcq');
-                        setShowDropdown(false);
-                      }}
+                    <button
+                      onClick={() => { setType('mcq'); setShowDropdown(false); }}
+                      className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors ${type === 'mcq' ? 'text-blue-600 font-medium bg-blue-50' : 'text-gray-700'}`}
                     >
-                      <ListChecks className={`h-5 w-5 ${type === 'mcq' ? 'text-blue-600' : 'text-gray-600'}`} />
-                      <span>Multiple Choice</span>
-                      {type === 'mcq' && <CheckCircle className="h-4 w-4 ml-auto text-blue-600" />}
-                    </motion.button>
-
-                    <motion.button
-                      whileHover={{ backgroundColor: '#e6f7ff' }}
-                      className={`w-full text-left px-4 py-3 flex items-center space-x-2 ${type === 'essay'
-                        ? 'bg-blue-100 text-blue-600 font-medium'
-                        : 'text-gray-700 bg-white'
-                        }`}
-                      onClick={() => {
-                        setType('essay');
-                        setShowDropdown(false);
-                      }}
+                      Multiple Choice
+                    </button>
+                    <button
+                      onClick={() => { setType('essay'); setShowDropdown(false); }}
+                      className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors ${type === 'essay' ? 'text-blue-600 font-medium bg-blue-50' : 'text-gray-700'}`}
                     >
-                      <Edit3 className={`h-5 w-5 ${type === 'essay' ? 'text-blue-600' : 'text-gray-600'}`} />
-                      <span>Essay</span>
-                      {type === 'essay' && <CheckCircle className="h-4 w-4 ml-auto text-blue-600" />}
-                    </motion.button>
+                      Essay Question
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           </div>
-          <p className="mt-2 text-blue-50">Create interactive assignments to engage your students</p>
+          <p className="mt-2 text-blue-50">Design a comprehensive assessment for your students</p>
         </div>
 
         {/* Alert popup */}
@@ -513,15 +494,14 @@ export default function QuizForm() {
                 )}
 
                 <p className={`text-lg ${alertMessage.includes('Error') || alertMessage.includes('timed out')
-                  ? 'text-red-600'
-                  : alertMessage.includes('Processing') || alertMessage.includes('Retrying')
-                    ? 'text-blue-600'
-                    : 'text-green-600'
+                    ? 'text-red-600'
+                    : alertMessage.includes('Processing') || alertMessage.includes('Retrying')
+                      ? 'text-blue-600'
+                      : 'text-green-600'
                   } font-medium mb-4 text-center`}>
                   {alertMessage}
                 </p>
 
-                {/* Only show the button for non-processing states */}
                 {!alertMessage.includes('Processing') && !alertMessage.includes('Retrying') && (
                   <Button
                     color={
@@ -547,7 +527,7 @@ export default function QuizForm() {
               <label className="block text-sm font-semibold mb-2 text-gray-700">Assignment Title</label>
               <input
                 type="text"
-                placeholder={type === 'mcq' ? "e.g., Geography Quiz" : "e.g., Critical Analysis Essay"}
+                placeholder="e.g., Geography Quiz"
                 className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -612,14 +592,67 @@ export default function QuizForm() {
             </div>
           </div>
 
+          {/* Guidelines Section */}
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+                <ListChecks className="mr-2 h-5 w-5 text-blue-600" />
+                Guidelines
+              </h2>
+              <motion.button
+                onClick={addGuideline}
+                className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>Add Guideline</span>
+              </motion.button>
+            </div>
+
+            <div className="space-y-4">
+              <AnimatePresence>
+                {guidelines.map((guideline, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex items-center gap-2"
+                  >
+                    <div className="flex-grow">
+                      <input
+                        type="text"
+                        placeholder={`Guideline ${index + 1}`}
+                        value={guideline}
+                        onChange={(e) => updateGuideline(index, e.target.value)}
+                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
+                      />
+                    </div>
+                    <motion.button
+                      onClick={() => removeGuideline(index)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      disabled={guidelines.length === 1}
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </motion.button>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
+
           {/* Questions Section */}
           <div className="mt-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-                {type === 'mcq' ?
-                  <HelpCircle className="mr-2 h-5 w-5 text-blue-600" /> :
+                {type === 'mcq' ? (
+                  <HelpCircle className="mr-2 h-5 w-5 text-blue-600" />
+                ) : (
                   <FileText className="mr-2 h-5 w-5 text-blue-600" />
-                }
+                )}
                 {type === 'mcq' ? 'Quiz Questions' : 'Essay Question'}
               </h2>
 

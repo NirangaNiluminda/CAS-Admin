@@ -347,746 +347,709 @@ export default function ViewQuiz() {
       a.href = url;
       a.download = `Quiz_${id}.xlsx`;
       document.body.appendChild(a);
-      a.click();
-      a.remove();
-    } catch (error) {
-      console.error("Failed to download Excel:", error);
-    }
-  };
-
-  const handlePrintQuiz = () => {
-    window.print();
-  };
-
-  const handleShareQuiz = () => {
-    if (!quiz) return;
-    const quizUrl = `https://cas-user.vercel.app/signin/${quiz._id}`;
-    navigator.clipboard.writeText(quizUrl)
-      .then(() => {
-        console.log("Quiz link copied to clipboard");
-      })
-      .catch(err => {
-        console.error("Failed to copy link: ", err);
-      });
-  };
-
-  const formatDate = (dateString: string | undefined): string => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  interface DifficultyColors {
-    [key: string]: string;
-  }
-
-  const getDifficultyColor = (difficulty: string | undefined): string => {
-    const difficultyColors: DifficultyColors = {
-      easy: 'bg-green-100 text-green-700 border-green-200',
-      medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      hard: 'bg-red-100 text-red-700 border-red-200',
-    };
-
-    return difficultyColors[difficulty?.toLowerCase() || ''] || 'bg-blue-100 text-blue-700 border-blue-200';
-  };
-
-  const groupViolationsByStudent = (violations: Violation[]) => {
-    return violations.reduce((acc: any, violation) => {
-      const studentId = violation.studentId._id;
-      if (!acc[studentId]) {
-        acc[studentId] = {
-          student: violation.studentId,
-          violations: []
+      const getDifficultyColor = (difficulty: string | undefined): string => {
+        const difficultyColors: DifficultyColors = {
+          easy: 'bg-green-100 text-green-700 border-green-200',
+          medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+          hard: 'bg-red-100 text-red-700 border-red-200',
         };
+
+        return difficultyColors[difficulty?.toLowerCase() || ''] || 'bg-blue-100 text-blue-700 border-blue-200';
+      };
+
+      const groupViolationsByStudent = (violations: Violation[]) => {
+        return violations.reduce((acc: any, violation) => {
+          const studentId = violation.studentId._id;
+          if (!acc[studentId]) {
+            acc[studentId] = {
+              student: violation.studentId,
+              violations: []
+            };
+          }
+          acc[studentId].violations.push(violation);
+          return acc;
+        }, {});
+      };
+
+      const getMostCommonViolationType = (violations: Violation[]) => {
+        const violationTypes = violations.map(v => v.violation.type);
+        const counts = violationTypes.reduce((acc: any, type) => {
+          acc[type] = (acc[type] || 0) + 1;
+          return acc;
+        }, {});
+
+        if (Object.keys(counts).length === 0) return null;
+
+        return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+      };
+
+      const mostCommonType = getMostCommonViolationType(liveViolations);
+      const groupedViolations = groupViolationsByStudent(liveViolations);
+      const uniqueStudentCount = Object.keys(groupedViolations).length;
+
+      if (!quiz) {
+        return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
       }
-      acc[studentId].violations.push(violation);
-      return acc;
-    }, {});
-  };
 
-  const getMostCommonViolationType = (violations: Violation[]) => {
-    const violationTypes = violations.map(v => v.violation.type);
-    const counts = violationTypes.reduce((acc: any, type) => {
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {});
+      return (
+        <div className="min-h-screen bg-gradient-to-b from-green-50 to-white transition-all duration-300 w-full">
+          <div className="fixed top-20 left-20 w-64 h-64 bg-green-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+          <div className="fixed top-40 right-20 w-72 h-72 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
 
-    if (Object.keys(counts).length === 0) return null;
-
-    return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
-  };
-
-  const mostCommonType = getMostCommonViolationType(liveViolations);
-  const groupedViolations = groupViolationsByStudent(liveViolations);
-  const uniqueStudentCount = Object.keys(groupedViolations).length;
-
-  if (!quiz) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white transition-all duration-300 w-full">
-      <div className="fixed top-20 left-20 w-64 h-64 bg-green-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-      <div className="fixed top-40 right-20 w-72 h-72 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-
-      <div className="max-w-6xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Breadcrumbs items={[{ label: quiz.title }]} />
-          <Card className="backdrop-blur-sm bg-white/90 shadow-xl border border-green-200">
-            <CardHeader className="space-y-4 pb-8">
-              <div className="flex items-center justify-between">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleGoBack}
-                  className="absolute left-4 hover:bg-green-50 border-0"
-                >
-                  <ArrowLeft className="h-5 w-5 text-green-600" />
-                </Button>
-                <div className="text-center mx-auto">
-                  <CardTitle className="text-3xl font-bold bg-gradient-to-r from-green-500 to-green-700 text-transparent bg-clip-text">
-                    {quiz.title}
-                  </CardTitle>
-                  <div className="flex justify-center gap-2 mt-2">
-                    <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
-                      <BookOpen className="h-4 w-4 mr-1" />
-                      {quiz.questions.length} Questions
-                    </Badge>
-                    {quiz.difficulty && (
-                      <Badge variant="outline" className={`${getDifficultyColor(quiz.difficulty)}`}>
-                        {quiz.difficulty}
-                      </Badge>
-                    )}
-                    {quiz.category && (
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                        {quiz.category}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-              {quiz.description && (
-                <CardDescription className="text-center mt-2 text-gray-600">
-                  {quiz.description}
-                </CardDescription>
-              )}
-            </CardHeader>
-
-            <div className="px-8 pb-6">
-              <div className="rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 p-6 border border-green-100 shadow-sm">
-                <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-16 w-16 border-2 border-green-200 shadow-sm">
-                      <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${name || 'Teacher'}`} />
-                      <AvatarFallback className="bg-green-100 text-green-700">
-                        {(name || 'T').charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800">
-                        {name || "Teacher"}
-                      </h3>
-                      <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-1 text-green-600" />
-                          <span>Created: {formatDate(quiz.createdAt)}</span>
-                        </div>
-                        {quiz.timeLimit && (
-                          <div className="flex items-center">
-                            <Clock className="h-4 w-4 mr-1 text-green-600" />
-                            <span>Time limit: {quiz.timeLimit} min</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            className="h-9 border border-green-200 hover:bg-green-100 text-green-700"
-                            onClick={handleShareQuiz}
-                          >
-                            <Share2 className="h-4 w-4 mr-2" />
-                            Share
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Copy quiz link to clipboard</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            className="h-9 border border-green-200 hover:bg-green-100 text-green-700"
-                            onClick={handlePrintQuiz}
-                          >
-                            <Printer className="h-4 w-4 mr-2" />
-                            Print
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Print quiz details</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            className="h-9 border border-green-200 hover:bg-green-100 text-green-700"
-                            onClick={() => router.push(`/edit/${quiz._id}`)}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Edit
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Edit this quiz</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="px-8 pb-6">
-              <div className={`rounded-xl p-6 border shadow-sm flex items-center justify-between ${new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate)
-                ? 'bg-green-50 border-green-300'
-                : new Date() < new Date(quiz.startDate)
-                  ? 'bg-blue-50 border-blue-200'
-                  : 'bg-gray-50 border-gray-200'
-                }`}>
-                <div className="flex items-center gap-4">
-                  <div className={`rounded-full p-3 ${new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate)
-                    ? 'bg-green-100'
-                    : new Date() < new Date(quiz.startDate)
-                      ? 'bg-blue-100'
-                      : 'bg-gray-100'
-                    }`}>
-                    {new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate) && (
-                      <div className="relative">
-                        <Clock className={`h-6 w-6 text-green-600`} />
-                        <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-500 animate-pulse"></span>
-                      </div>
-                    )}
-                    {new Date() < new Date(quiz.startDate) && (
-                      <Calendar className="h-6 w-6 text-blue-600" />
-                    )}
-                    {new Date() > new Date(quiz.endDate) && (
-                      <Check className="h-6 w-6 text-gray-600" />
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold">
-                        {new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate)
-                          ? 'Quiz is LIVE'
-                          : new Date() < new Date(quiz.startDate)
-                            ? 'Quiz is Upcoming'
-                            : 'Quiz is Completed'}
-                      </h3>
-                      <Badge className={`
-            ${new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate)
-                          ? 'bg-green-100 text-green-700 border-green-200'
-                          : new Date() < new Date(quiz.startDate)
-                            ? 'bg-blue-100 text-blue-700 border-blue-200'
-                            : 'bg-gray-100 text-gray-700 border-gray-200'
-                        }
-          `}>
-                        {new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate)
-                          ? 'Active Now'
-                          : new Date() < new Date(quiz.startDate)
-                            ? 'Scheduled'
-                            : 'Ended'}
-                      </Badge>
-                    </div>
-
-                    <div className="flex items-center gap-6 mt-2 text-sm">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4 text-gray-500" />
-                        <span>
-                          <span className="font-medium">Start:</span> {formatDate(quiz.startDate)}
-                          {quiz.startDate && new Date(quiz.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4 text-gray-500" />
-                        <span>
-                          <span className="font-medium">End:</span> {formatDate(quiz.endDate)}
-                          {quiz.endDate && new Date(quiz.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-
-                      {new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate) && (
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4 text-green-600" />
-                          <span className="text-green-600 font-medium">
-                            {(() => {
-                              const now = new Date();
-                              const end = new Date(quiz.endDate);
-                              const diffMs = end.getTime() - now.getTime();
-                              const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-                              const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                              return `${diffHrs}h ${diffMins}m remaining`;
-                            })()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  {new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate) && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            className="border-green-200 bg-white text-green-700 hover:bg-green-50"
-                            onClick={handleShareQuiz}
-                          >
-                            <Share2 className="h-4 w-4 mr-2" />
-                            Share Now
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Share this quiz with students</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-
-                  {new Date() < new Date(quiz.startDate) && (
-                    <div className="text-blue-600 font-medium text-right">
-                      Starts in {(() => {
-                        const now = new Date();
-                        const start = new Date(quiz.startDate);
-                        const diffMs = start.getTime() - now.getTime();
-                        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                        const diffHrs = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                        const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
-                        if (diffDays > 0) {
-                          return `${diffDays}d ${diffHrs}h`;
-                        } else {
-                          return `${diffHrs}h ${diffMins}m`;
-                        }
-                      })()}
-                    </div>
-                  )}
-
-                  {new Date() > new Date(quiz.endDate) && (
-                    <Badge variant="outline" className="bg-gray-50 text-gray-600">
-                      Ended {(() => {
-                        const now = new Date();
-                        const end = new Date(quiz.endDate);
-                        const diffMs = now.getTime() - end.getTime();
-                        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-                        if (diffDays === 0) {
-                          return 'today';
-                        } else if (diffDays === 1) {
-                          return 'yesterday';
-                        } else if (diffDays < 7) {
-                          return `${diffDays} days ago`;
-                        } else if (diffDays < 30) {
-                          return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
-                        } else {
-                          return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
-                        }
-                      })()}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="px-8 pb-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <motion.div
-                  whileHover={{ y: -5 }}
-                  transition={{ duration: 0.2 }}
-                  className="bg-white rounded-xl p-4 shadow-sm border border-yellow-100"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="bg-yellow-100 rounded-lg p-2">
-                      <Clock className="h-5 w-5 text-yellow-600" />
-                    </div>
-                    <Badge variant="outline" className="bg-yellow-50 text-yellow-600 flex items-center">
-                      Live
-                      {isStatsLoading && (
-                        <div className="ml-2 h-3 w-3 rounded-full bg-yellow-500 animate-pulse"></div>
-                      )}
-                    </Badge>
-                  </div>
-                  {isStatsLoading ? (
-                    <Skeleton className="h-8 w-16 mt-1" />
-                  ) : (
-                    <h4 className="text-2xl font-bold text-gray-800">{quizStats.activeStudents}</h4>
-                  )}
-                  <p className="text-sm text-gray-500">Currently taking</p>
-                </motion.div>
-
-                <motion.div
-                  whileHover={{ y: -5 }}
-                  transition={{ duration: 0.2 }}
-                  className="bg-white rounded-xl p-4 shadow-sm border border-blue-100"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="bg-blue-100 rounded-lg p-2">
-                      <Check className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-600">
-                      Completed
-                    </Badge>
-                  </div>
-                  {isStatsLoading ? (
-                    <Skeleton className="h-8 w-16 mt-1" />
-                  ) : (
-                    <h4 className="text-2xl font-bold text-gray-800">{quizStats.completedAttempts}</h4>
-                  )}
-                  <p className="text-sm text-gray-500">Submissions</p>
-                </motion.div>
-
-                <motion.div
-                  whileHover={{ y: -5 }}
-                  transition={{ duration: 0.2 }}
-                  className="bg-white rounded-xl p-4 shadow-sm border border-purple-100"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="bg-purple-100 rounded-lg p-2">
-                      <BarChart3 className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <Badge variant="outline" className="bg-purple-50 text-purple-600">
-                      Avg Score
-                    </Badge>
-                  </div>
-                  {isStatsLoading ? (
-                    <Skeleton className="h-8 w-16 mt-1" />
-                  ) : (
-                    <h4 className="text-2xl font-bold text-gray-800">{quizStats.averageScore}%</h4>
-                  )}
-                  <p className="text-sm text-gray-500">Class Average</p>
-                </motion.div>
-              </div>
-            </div>
-
-            <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <div className="px-8">
-                <TabsList className="grid w-full grid-cols-3 mb-6 h-12 bg-green-50/50 p-1 rounded-xl">
-                  <TabsTrigger
-                    value="overview"
-                    className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm transition-all"
-                  >
-                    <Info className="h-4 w-4 mr-2" />
-                    Overview
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="monitor"
-                    className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-amber-700 data-[state=active]:shadow-sm transition-all"
-                  >
-                    <Shield className="h-4 w-4 mr-2" />
-                    Live Monitor
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="results"
-                    className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-sm transition-all"
-                  >
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    Results
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-
-              <TabsContent value="overview" className="mt-0">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                      <HelpCircle className="h-5 w-5 text-green-600" />
-                      Questions ({quiz.questions.length})
-                    </h3>
-                  </div>
-                  <ScrollArea className="h-[400px] rounded-xl border border-green-100 bg-white">
-                    <Table>
-                      <TableHeader className="sticky top-0 bg-green-50 z-10">
-                        <TableRow>
-                          <TableHead className="w-[50px] font-semibold text-green-700">#</TableHead>
-                          <TableHead className="font-semibold text-green-700">Question</TableHead>
-                          <TableHead className="font-semibold text-green-700">Options</TableHead>
-                          <TableHead className="w-[120px] font-semibold text-green-700 text-center">Correct Answer</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {quiz.questions.map((question, index) => (
-                          <TableRow key={index} className="hover:bg-green-50/50 transition-colors">
-                            <TableCell className="font-medium text-green-600">
-                              {index + 1}
-                            </TableCell>
-                            <TableCell className="text-gray-700">
-                              {question.questionText}
-                            </TableCell>
-                            <TableCell className="max-w-xl">
-                              <div className="grid grid-cols-1 gap-2">
-                                {question.options.map((option) => (
-                                  <div
-                                    key={option._id}
-                                    className={`p-2 rounded-md text-sm ${option.isCorrect
-                                      ? 'bg-green-50 text-green-700 border border-green-200'
-                                      : 'bg-gray-50 text-gray-600 border border-gray-200'
-                                      }`}
-                                  >
-                                    {option.text}
-                                  </div>
-                                ))}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {question.options.find(opt => opt.isCorrect)?.text}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </ScrollArea>
-                </CardContent>
-              </TabsContent>
-
-              <TabsContent value="monitor" className="mt-0">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                      <Shield className="h-5 w-5 text-amber-600" />
-                      Live Student Monitoring
-                    </h3>
-                    <Badge variant="outline" className="bg-amber-50 text-amber-600 flex items-center gap-1">
-                      <Bell className="h-4 w-4" />
-                      {isViolationsLoading ? (
-                        <span className="flex items-center">
-                          Updating
-                          <span className="ml-2 h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
-                        </span>
-                      ) : (
-                        <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
-                      )}
-                    </Badge>
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                    <Card className="border border-amber-200 bg-white shadow-sm">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-sm font-medium text-gray-600">Active Violations</h4>
-                          <Badge variant="outline" className="bg-amber-50 text-amber-600">
-                            {liveViolations.length}
-                          </Badge>
-                        </div>
-                        <div className="mt-2">
-                          <div className="text-2xl font-bold text-amber-600">
-                            {liveViolations.length}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            across {uniqueStudentCount} students
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="border border-amber-200 bg-white shadow-sm">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-sm font-medium text-gray-600">Students with Violations</h4>
-                          <Badge variant="outline" className="bg-amber-50 text-amber-600">
-                            {uniqueStudentCount}
-                          </Badge>
-                        </div>
-                        <div className="mt-2">
-                          <div className="text-2xl font-bold text-amber-600">
-                            {quizStats.activeStudents > 0 ? Math.round((uniqueStudentCount / quizStats.activeStudents) * 100) : 0}%
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            of active students
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="border border-amber-200 bg-white shadow-sm">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-sm font-medium text-gray-600">Most Common Violation</h4>
-                        </div>
-                        <div className="mt-2">
-                          {mostCommonType ? (
-                            <>
-                              <div className="text-lg font-bold text-gray-800">{mostCommonType}</div>
-                              <div className="text-sm text-gray-500">
-                                {liveViolations.filter(v => v.violation.type === mostCommonType).length} occurrences
-                              </div>
-                            </>
-                          ) : (
-                            <div className="text-gray-500">No violations detected</div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  <Card className="border border-amber-200 shadow-sm mb-6">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-amber-600" />
-                        Students with Active Violations
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ScrollArea className="h-[300px]">
-                        {Object.keys(groupedViolations).length === 0 ? (
-                          <div className="text-center py-8">
-                            <Shield className="mx-auto h-10 w-10 text-gray-300" />
-                            <p className="mt-2 text-gray-500">No violations detected</p>
-                          </div>
-                        ) : (
-                          Object.values(groupedViolations).map((data: any, index: number) => (
-                            <Collapsible key={data.student._id} className="mb-3">
-                              <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                                <CollapsibleTrigger className="w-full">
-                                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50">
-                                    <div className="flex items-center gap-3">
-                                      <Avatar className="h-10 w-10 border border-gray-200">
-                                        <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${data.student.name}`} />
-                                        <AvatarFallback className="bg-amber-50 text-amber-600">
-                                          {data.student.name.charAt(0)}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <div>
-                                        <h4 className="font-medium text-gray-800">{data.student.name}</h4>
-                                        <div className="flex flex-col text-sm">
-                                          {data.student.registrationNumber && (
-                                            <span className="text-amber-600 font-medium">Reg: {data.student.registrationNumber}</span>
-                                          )}
-                                          {data.student.email && (
-                                            <span className="text-gray-500">{data.student.email}</span>
-                                          )}
-                                          {!data.student.email && !data.student.registrationNumber && (
-                                            <span className="text-gray-500">ID: {data.student._id.substring(0, 8)}...</span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                      <Badge variant="outline" className="bg-amber-50 text-amber-600">
-                                        {data.violations.length} Violations
-                                      </Badge>
-                                      <ChevronDown className="h-5 w-5 text-gray-400" />
-                                    </div>
-                                  </div>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent>
-                                  <div className="border-t border-gray-200 p-4 bg-gray-50">
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow className="bg-gray-100">
-                                          <TableHead className="w-[180px]">Time</TableHead>
-                                          <TableHead>Type</TableHead>
-                                          <TableHead>Details</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {data.violations.sort((a: Violation, b: Violation) =>
-                                          new Date(b.violation.timestamp).getTime() - new Date(a.violation.timestamp).getTime()
-                                        ).map((violation: Violation, vIndex: number) => (
-                                          <TableRow key={vIndex}>
-                                            <TableCell className="text-sm">
-                                              {new Date(violation.violation.timestamp).toLocaleTimeString()}
-                                            </TableCell>
-                                            <TableCell>
-                                              <Badge variant="outline" className="bg-amber-50 text-amber-600">
-                                                {violation.violation.type}
-                                              </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-sm">
-                                              {violation.violation.key && <span>Key: {violation.violation.key}</span>}
-                                              {violation.violation.count && <span>Count: {violation.violation.count}</span>}
-                                            </TableCell>
-                                          </TableRow>
-                                        ))}
-                                      </TableBody>
-                                    </Table>
-                                    <div className="mt-4 flex justify-end">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => router.push(`/viewResult/${quiz._id}/student/${data.student._id}`)}
-                                        className="text-xs border-amber-200 text-amber-700 hover:bg-amber-50"
-                                      >
-                                        <Eye className="h-3 w-3 mr-1" />
-                                        View Student
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </CollapsibleContent>
-                              </div>
-                            </Collapsible>
-                          ))
-                        )}
-                      </ScrollArea>
-                    </CardContent>
-                  </Card>
-
-                  <div className="flex justify-end">
+          <div className="max-w-6xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Breadcrumbs items={[{ label: quiz.title }]} />
+              <Card className="backdrop-blur-sm bg-white/90 shadow-xl border border-green-200">
+                <CardHeader className="space-y-4 pb-8">
+                  <div className="flex items-center justify-between">
                     <Button
                       variant="ghost"
-                      onClick={fetchLiveViolations}
-                      className="border-amber-200 text-amber-700 hover:bg-amber-50"
+                      size="sm"
+                      onClick={handleGoBack}
+                      className="absolute left-4 hover:bg-green-50 border-0"
                     >
-                      Refresh Data
+                      <ArrowLeft className="h-5 w-5 text-green-600" />
                     </Button>
+                    <div className="text-center mx-auto">
+                      <CardTitle className="text-3xl font-bold bg-gradient-to-r from-green-500 to-green-700 text-transparent bg-clip-text">
+                        {quiz.title}
+                      </CardTitle>
+                      <div className="flex justify-center gap-2 mt-2">
+                        <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
+                          <BookOpen className="h-4 w-4 mr-1" />
+                          {quiz.questions.length} Questions
+                        </Badge>
+                        {quiz.difficulty && (
+                          <Badge variant="outline" className={`${getDifficultyColor(quiz.difficulty)}`}>
+                            {quiz.difficulty}
+                          </Badge>
+                        )}
+                        {quiz.category && (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            {quiz.category}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </CardContent>
-              </TabsContent>
+                  {quiz.description && (
+                    <CardDescription className="text-center mt-2 text-gray-600">
+                      {quiz.description}
+                    </CardDescription>
+                  )}
+                </CardHeader>
 
-              <TabsContent value="results" className="mt-0">
-                <div className="text-center p-12">
-                  <Button
-                    variant="solid"
-                    onClick={() => router.push(`/viewResult/${quiz._id}`)}
-                    className="bg-green-600 hover:bg-green-700 text-white px-8"
-                  >
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    View Detailed Results
-                  </Button>
-                  <p className="text-sm text-gray-500 mt-4">
-                    View comprehensive student performance analytics and individual responses
-                  </p>
+                <div className="px-8 pb-6">
+                  <div className="rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 p-6 border border-green-100 shadow-sm">
+                    <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16 border-2 border-green-200 shadow-sm">
+                          <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${name || 'Teacher'}`} />
+                          <AvatarFallback className="bg-green-100 text-green-700">
+                            {(name || 'T').charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-800">
+                            {name || "Teacher"}
+                          </h3>
+                          <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                            <div className="flex items-center">
+                              <Calendar className="h-4 w-4 mr-1 text-green-600" />
+                              <span>Created: {formatDate(quiz.createdAt)}</span>
+                            </div>
+                            {quiz.timeLimit && (
+                              <div className="flex items-center">
+                                <Clock className="h-4 w-4 mr-1 text-green-600" />
+                                <span>Time limit: {quiz.timeLimit} min</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                className="h-9 border border-green-200 hover:bg-green-100 text-green-700"
+                                onClick={handleShareQuiz}
+                              >
+                                <Share2 className="h-4 w-4 mr-2" />
+                                Share
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Copy quiz link to clipboard</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                className="h-9 border border-green-200 hover:bg-green-100 text-green-700"
+                                onClick={handlePrintQuiz}
+                              >
+                                <Printer className="h-4 w-4 mr-2" />
+                                Print
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Print quiz details</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                className="h-9 border border-green-200 hover:bg-green-100 text-green-700"
+                                onClick={() => router.push(`/edit/${quiz._id}`)}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Edit
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Edit this quiz</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </TabsContent>
-            </Tabs>
-          </Card>
-        </motion.div>
-      </div>
-    </div>
-  );
-}
+
+                <div className="px-8 pb-6">
+                  <div className={`rounded-xl p-6 border shadow-sm flex items-center justify-between ${new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate)
+                    ? 'bg-green-50 border-green-300'
+                    : new Date() < new Date(quiz.startDate)
+                      ? 'bg-blue-50 border-blue-200'
+                      : 'bg-gray-50 border-gray-200'
+                    }`}>
+                    <div className="flex items-center gap-4">
+                      <div className={`rounded-full p-3 ${new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate)
+                        ? 'bg-green-100'
+                        : new Date() < new Date(quiz.startDate)
+                          ? 'bg-blue-100'
+                          : 'bg-gray-100'
+                        }`}>
+                        {new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate) && (
+                          <div className="relative">
+                            <Clock className={`h-6 w-6 text-green-600`} />
+                            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-500 animate-pulse"></span>
+                          </div>
+                        )}
+                        {new Date() < new Date(quiz.startDate) && (
+                          <Calendar className="h-6 w-6 text-blue-600" />
+                        )}
+                        {new Date() > new Date(quiz.endDate) && (
+                          <Check className="h-6 w-6 text-gray-600" />
+                        )}
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-semibold">
+                            {new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate)
+                              ? 'Quiz is LIVE'
+                              : new Date() < new Date(quiz.startDate)
+                                ? 'Quiz is Upcoming'
+                                : 'Quiz is Completed'}
+                          </h3>
+                          <Badge className={`
+            ${new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate)
+                              ? 'bg-green-100 text-green-700 border-green-200'
+                              : new Date() < new Date(quiz.startDate)
+                                ? 'bg-blue-100 text-blue-700 border-blue-200'
+                                : 'bg-gray-100 text-gray-700 border-gray-200'
+                            }
+          `}>
+                            {new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate)
+                              ? 'Active Now'
+                              : new Date() < new Date(quiz.startDate)
+                                ? 'Scheduled'
+                                : 'Ended'}
+                          </Badge>
+                        </div>
+
+                        <div className="flex items-center gap-6 mt-2 text-sm">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4 text-gray-500" />
+                            <span>
+                              <span className="font-medium">Start:</span> {formatDate(quiz.startDate)}
+                              {quiz.startDate && new Date(quiz.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4 text-gray-500" />
+                            <span>
+                              <span className="font-medium">End:</span> {formatDate(quiz.endDate)}
+                              {quiz.endDate && new Date(quiz.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+
+                          {new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate) && (
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-4 w-4 text-green-600" />
+                              <span className="text-green-600 font-medium">
+                                {(() => {
+                                  const now = new Date();
+                                  const end = new Date(quiz.endDate);
+                                  const diffMs = end.getTime() - now.getTime();
+                                  const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+                                  const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                                  return `${diffHrs}h ${diffMins}m remaining`;
+                                })()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      {new Date() > new Date(quiz.startDate) && new Date() < new Date(quiz.endDate) && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                className="border-green-200 bg-white text-green-700 hover:bg-green-50"
+                                onClick={handleShareQuiz}
+                              >
+                                <Share2 className="h-4 w-4 mr-2" />
+                                Share Now
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Share this quiz with students</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+
+                      {new Date() < new Date(quiz.startDate) && (
+                        <div className="text-blue-600 font-medium text-right">
+                          Starts in {(() => {
+                            const now = new Date();
+                            const start = new Date(quiz.startDate);
+                            const diffMs = start.getTime() - now.getTime();
+                            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                            const diffHrs = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                            const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+                            if (diffDays > 0) {
+                              return `${diffDays}d ${diffHrs}h`;
+                            } else {
+                              return `${diffHrs}h ${diffMins}m`;
+                            }
+                          })()}
+                        </div>
+                      )}
+
+                      {new Date() > new Date(quiz.endDate) && (
+                        <Badge variant="outline" className="bg-gray-50 text-gray-600">
+                          Ended {(() => {
+                            const now = new Date();
+                            const end = new Date(quiz.endDate);
+                            const diffMs = now.getTime() - end.getTime();
+                            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+                            if (diffDays === 0) {
+                              return 'today';
+                            } else if (diffDays === 1) {
+                              return 'yesterday';
+                            } else if (diffDays < 7) {
+                              return `${diffDays} days ago`;
+                            } else if (diffDays < 30) {
+                              return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
+                            } else {
+                              return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
+                            }
+                          })()}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-8 pb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <motion.div
+                      whileHover={{ y: -5 }}
+                      transition={{ duration: 0.2 }}
+                      className="bg-white rounded-xl p-4 shadow-sm border border-yellow-100"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="bg-yellow-100 rounded-lg p-2">
+                          <Clock className="h-5 w-5 text-yellow-600" />
+                        </div>
+                        <Badge variant="outline" className="bg-yellow-50 text-yellow-600 flex items-center">
+                          Live
+                          {isStatsLoading && (
+                            <div className="ml-2 h-3 w-3 rounded-full bg-yellow-500 animate-pulse"></div>
+                          )}
+                        </Badge>
+                      </div>
+                      {isStatsLoading ? (
+                        <Skeleton className="h-8 w-16 mt-1" />
+                      ) : (
+                        <h4 className="text-2xl font-bold text-gray-800">{quizStats.activeStudents}</h4>
+                      )}
+                      <p className="text-sm text-gray-500">Currently taking</p>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -5 }}
+                      transition={{ duration: 0.2 }}
+                      className="bg-white rounded-xl p-4 shadow-sm border border-blue-100"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="bg-blue-100 rounded-lg p-2">
+                          <Check className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-600">
+                          Completed
+                        </Badge>
+                      </div>
+                      {isStatsLoading ? (
+                        <Skeleton className="h-8 w-16 mt-1" />
+                      ) : (
+                        <h4 className="text-2xl font-bold text-gray-800">{quizStats.completedAttempts}</h4>
+                      )}
+                      <p className="text-sm text-gray-500">Submissions</p>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -5 }}
+                      transition={{ duration: 0.2 }}
+                      className="bg-white rounded-xl p-4 shadow-sm border border-purple-100"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="bg-purple-100 rounded-lg p-2">
+                          <BarChart3 className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <Badge variant="outline" className="bg-purple-50 text-purple-600">
+                          Avg Score
+                        </Badge>
+                      </div>
+                      {isStatsLoading ? (
+                        <Skeleton className="h-8 w-16 mt-1" />
+                      ) : (
+                        <h4 className="text-2xl font-bold text-gray-800">{quizStats.averageScore}%</h4>
+                      )}
+                      <p className="text-sm text-gray-500">Class Average</p>
+                    </motion.div>
+                  </div>
+                </div>
+
+                <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <div className="px-8">
+                    <TabsList className="grid w-full grid-cols-3 mb-6 h-12 bg-green-50/50 p-1 rounded-xl">
+                      <TabsTrigger
+                        value="overview"
+                        className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-sm transition-all"
+                      >
+                        <Info className="h-4 w-4 mr-2" />
+                        Overview
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="monitor"
+                        className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-amber-700 data-[state=active]:shadow-sm transition-all"
+                      >
+                        <Shield className="h-4 w-4 mr-2" />
+                        Live Monitor
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="results"
+                        className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-sm transition-all"
+                      >
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        Results
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+
+                  <TabsContent value="overview" className="mt-0">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                          <HelpCircle className="h-5 w-5 text-green-600" />
+                          Questions ({quiz.questions.length})
+                        </h3>
+                      </div>
+                      <ScrollArea className="h-[400px] rounded-xl border border-green-100 bg-white">
+                        <Table>
+                          <TableHeader className="sticky top-0 bg-green-50 z-10">
+                            <TableRow>
+                              <TableHead className="w-[50px] font-semibold text-green-700">#</TableHead>
+                              <TableHead className="font-semibold text-green-700">Question</TableHead>
+                              <TableHead className="font-semibold text-green-700">Options</TableHead>
+                              <TableHead className="w-[120px] font-semibold text-green-700 text-center">Correct Answer</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {quiz.questions.map((question, index) => (
+                              <TableRow key={index} className="hover:bg-green-50/50 transition-colors">
+                                <TableCell className="font-medium text-green-600">
+                                  {index + 1}
+                                </TableCell>
+                                <TableCell className="text-gray-700">
+                                  {question.questionText}
+                                </TableCell>
+                                <TableCell className="max-w-xl">
+                                  <div className="grid grid-cols-1 gap-2">
+                                    {question.options.map((option) => (
+                                      <div
+                                        key={option._id}
+                                        className={`p-2 rounded-md text-sm ${option.isCorrect
+                                          ? 'bg-green-50 text-green-700 border border-green-200'
+                                          : 'bg-gray-50 text-gray-600 border border-gray-200'
+                                          }`}
+                                      >
+                                        {option.text}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {question.options.find(opt => opt.isCorrect)?.text}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </ScrollArea>
+                    </CardContent>
+                  </TabsContent>
+
+                  <TabsContent value="monitor" className="mt-0">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                          <Shield className="h-5 w-5 text-amber-600" />
+                          Live Student Monitoring
+                        </h3>
+                        <Badge variant="outline" className="bg-amber-50 text-amber-600 flex items-center gap-1">
+                          <Bell className="h-4 w-4" />
+                          {isViolationsLoading ? (
+                            <span className="flex items-center">
+                              Updating
+                              <span className="ml-2 h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+                            </span>
+                          ) : (
+                            <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
+                          )}
+                        </Badge>
+                      </div>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                        <Card className="border border-amber-200 bg-white shadow-sm">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="text-sm font-medium text-gray-600">Active Violations</h4>
+                              <Badge variant="outline" className="bg-amber-50 text-amber-600">
+                                {liveViolations.length}
+                              </Badge>
+                            </div>
+                            <div className="mt-2">
+                              <div className="text-2xl font-bold text-amber-600">
+                                {liveViolations.length}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                across {uniqueStudentCount} students
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        <Card className="border border-amber-200 bg-white shadow-sm">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="text-sm font-medium text-gray-600">Students with Violations</h4>
+                              <Badge variant="outline" className="bg-amber-50 text-amber-600">
+                                {uniqueStudentCount}
+                              </Badge>
+                            </div>
+                            <div className="mt-2">
+                              <div className="text-2xl font-bold text-amber-600">
+                                {quizStats.activeStudents > 0 ? Math.round((uniqueStudentCount / quizStats.activeStudents) * 100) : 0}%
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                of active students
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        <Card className="border border-amber-200 bg-white shadow-sm">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="text-sm font-medium text-gray-600">Most Common Violation</h4>
+                            </div>
+                            <div className="mt-2">
+                              {mostCommonType ? (
+                                <>
+                                  <div className="text-lg font-bold text-gray-800">{mostCommonType}</div>
+                                  <div className="text-sm text-gray-500">
+                                    {liveViolations.filter(v => v.violation.type === mostCommonType).length} occurrences
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="text-gray-500">No violations detected</div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      <Card className="border border-amber-200 shadow-sm mb-6">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4 text-amber-600" />
+                            Students with Active Violations
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ScrollArea className="h-[300px]">
+                            {Object.keys(groupedViolations).length === 0 ? (
+                              <div className="text-center py-8">
+                                <Shield className="mx-auto h-10 w-10 text-gray-300" />
+                                <p className="mt-2 text-gray-500">No violations detected</p>
+                              </div>
+                            ) : (
+                              Object.values(groupedViolations).map((data: any, index: number) => (
+                                <Collapsible key={data.student._id} className="mb-3">
+                                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                                    <CollapsibleTrigger className="w-full">
+                                      <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50">
+                                        <div className="flex items-center gap-3">
+                                          <Avatar className="h-10 w-10 border border-gray-200">
+                                            <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${data.student.name}`} />
+                                            <AvatarFallback className="bg-amber-50 text-amber-600">
+                                              {data.student.name.charAt(0)}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          <div>
+                                            <h4 className="font-medium text-gray-800">{data.student.name}</h4>
+                                            <div className="flex flex-col text-sm">
+                                              {data.student.registrationNumber && (
+                                                <span className="text-amber-600 font-medium">Reg: {data.student.registrationNumber}</span>
+                                              )}
+                                              {data.student.email && (
+                                                <span className="text-gray-500">{data.student.email}</span>
+                                              )}
+                                              {!data.student.email && !data.student.registrationNumber && (
+                                                <span className="text-gray-500">ID: {data.student._id.substring(0, 8)}...</span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                          <Badge variant="outline" className="bg-amber-50 text-amber-600">
+                                            {data.violations.length} Violations
+                                          </Badge>
+                                          <ChevronDown className="h-5 w-5 text-gray-400" />
+                                        </div>
+                                      </div>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                      <div className="border-t border-gray-200 p-4 bg-gray-50">
+                                        <Table>
+                                          <TableHeader>
+                                            <TableRow className="bg-gray-100">
+                                              <TableHead className="w-[180px]">Time</TableHead>
+                                              <TableHead>Type</TableHead>
+                                              <TableHead>Details</TableHead>
+                                            </TableRow>
+                                          </TableHeader>
+                                          <TableBody>
+                                            {data.violations.sort((a: Violation, b: Violation) =>
+                                              new Date(b.violation.timestamp).getTime() - new Date(a.violation.timestamp).getTime()
+                                            ).map((violation: Violation, vIndex: number) => (
+                                              <TableRow key={vIndex}>
+                                                <TableCell className="text-sm">
+                                                  {new Date(violation.violation.timestamp).toLocaleTimeString()}
+                                                </TableCell>
+                                                <TableCell>
+                                                  <Badge variant="outline" className="bg-amber-50 text-amber-600">
+                                                    {violation.violation.type}
+                                                  </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-sm">
+                                                  {violation.violation.key && <span>Key: {violation.violation.key}</span>}
+                                                  {violation.violation.count && <span>Count: {violation.violation.count}</span>}
+                                                </TableCell>
+                                              </TableRow>
+                                            ))}
+                                          </TableBody>
+                                        </Table>
+                                        <div className="mt-4 flex justify-end">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => router.push(`/viewResult/${quiz._id}/student/${data.student._id}`)}
+                                            className="text-xs border-amber-200 text-amber-700 hover:bg-amber-50"
+                                          >
+                                            <Eye className="h-3 w-3 mr-1" />
+                                            View Student
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </CollapsibleContent>
+                                  </div>
+                                </Collapsible>
+                              ))
+                            )}
+                          </ScrollArea>
+                        </CardContent>
+                      </Card>
+
+                      <div className="flex justify-end">
+                        <Button
+                          variant="ghost"
+                          onClick={fetchLiveViolations}
+                          className="border-amber-200 text-amber-700 hover:bg-amber-50"
+                        >
+                          Refresh Data
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </TabsContent>
+
+                  <TabsContent value="results" className="mt-0">
+                    <div className="text-center p-12">
+                      <Button
+                        variant="solid"
+                        onClick={() => router.push(`/viewResult/${quiz._id}`)}
+                        className="bg-green-600 hover:bg-green-700 text-white px-8"
+                      >
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        View Detailed Results
+                      </Button>
+                      <p className="text-sm text-gray-500 mt-4">
+                        View comprehensive student performance analytics and individual responses
+                      </p>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+      );
+    }

@@ -71,19 +71,20 @@ export default function EditQuizForm() {
   const [intendedBatch, setIntendedBatch] = useState('');
   const [retryCount, setRetryCount] = useState(0);
   const [maxRetries] = useState(3);
+  const [guidelines, setGuidelines] = useState<string[]>(['']);
 
   // Fetch quiz data
   useEffect(() => {
     const fetchQuiz = async () => {
       if (!id) return;
-      
+
       setIsLoading(true);
       try {
         const token = localStorage.getItem('token');
         let apiUrl;
         if (typeof window !== 'undefined') {
-          apiUrl = window.location.hostname === 'localhost' 
-            ? 'http://localhost:4000' 
+          apiUrl = window.location.hostname === 'localhost'
+            ? 'http://localhost:4000'
             : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
         }
 
@@ -94,14 +95,14 @@ export default function EditQuizForm() {
         });
 
         const quiz = response.data.assignment;
-        
+
         // Populate form fields
         setTitle(quiz.title);
         setDescription(quiz.description);
         setTimeLimit(quiz.timeLimit);
         setPassword(quiz.password || '');
         setIntendedBatch(quiz.intendedBatch?.toString() || '');
-        
+
         // Format dates for datetime-local input
         if (quiz.startDate) {
           const start = new Date(quiz.startDate);
@@ -110,6 +111,13 @@ export default function EditQuizForm() {
         if (quiz.endDate) {
           const end = new Date(quiz.endDate);
           setEndDate(end.toISOString().slice(0, 16));
+        }
+
+        // Populate guidelines
+        if (quiz.guidelines && quiz.guidelines.length > 0) {
+          setGuidelines(quiz.guidelines);
+        } else {
+          setGuidelines(['']);
         }
 
         // Format questions
@@ -123,9 +131,9 @@ export default function EditQuizForm() {
           pointsForQuestion: q.pointsForQuestion || 1,
           _id: q._id
         }));
-        
+
         setQuestions(formattedQuestions);
-        
+
       } catch (error) {
         console.error('Error fetching quiz:', error);
         setAlertMessage('Failed to load quiz data');
@@ -182,6 +190,23 @@ export default function EditQuizForm() {
     }, 1500);
   };
 
+  // Guideline handlers
+  const addGuideline = () => {
+    setGuidelines([...guidelines, '']);
+  };
+
+  const removeGuideline = (index: number) => {
+    if (guidelines.length > 1) {
+      setGuidelines(guidelines.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateGuideline = (index: number, value: string) => {
+    const newGuidelines = [...guidelines];
+    newGuidelines[index] = value;
+    setGuidelines(newGuidelines);
+  };
+
   const validateForm = () => {
     if (!title.trim()) {
       setAlertMessage('Assignment title is required.');
@@ -228,8 +253,8 @@ export default function EditQuizForm() {
   }
 
   const submitWithRetry = async (
-    endpoint: string, 
-    data: any, 
+    endpoint: string,
+    data: any,
     token: string
   ): Promise<SubmitResponse> => {
     let attempt = 0;
@@ -249,8 +274,8 @@ export default function EditQuizForm() {
 
         const response = await Promise.race([
           axios.put<{ success: boolean; message?: string; assignment?: any }>(
-            endpoint, 
-            data, 
+            endpoint,
+            data,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -301,8 +326,8 @@ export default function EditQuizForm() {
 
       let apiUrl;
       if (typeof window !== 'undefined') {
-        apiUrl = window.location.hostname === 'localhost' 
-          ? 'http://localhost:4000' 
+        apiUrl = window.location.hostname === 'localhost'
+          ? 'http://localhost:4000'
           : process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
       }
 
@@ -322,7 +347,7 @@ export default function EditQuizForm() {
         teacherId: admin?._id,
         startDate: formatDate(startDate),
         endDate: formatDate(endDate),
-        guidelines: ["Guideline 1", "Guideline 2", "Guideline 3", "Guideline 4"],
+        guidelines: guidelines.filter(g => g.trim() !== ''),
         questions: questions.map((q) => ({
           questionText: q.questionText,
           options: q.options.map((opt) => ({
@@ -445,12 +470,11 @@ export default function EditQuizForm() {
                   </div>
                 )}
 
-                <p className={`text-lg ${
-                  alertMessage.includes('Error') || alertMessage.includes('timed out')
+                <p className={`text-lg ${alertMessage.includes('Error') || alertMessage.includes('timed out')
                     ? 'text-red-600'
                     : alertMessage.includes('Processing') || alertMessage.includes('Retrying')
-                    ? 'text-blue-600'
-                    : 'text-green-600'
+                      ? 'text-blue-600'
+                      : 'text-green-600'
                   } font-medium mb-4 text-center`}>
                   {alertMessage}
                 </p>
@@ -542,6 +566,58 @@ export default function EditQuizForm() {
                   className="p-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all w-full"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Guidelines Section */}
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+                <ListChecks className="mr-2 h-5 w-5 text-blue-600" />
+                Guidelines
+              </h2>
+              <motion.button
+                onClick={addGuideline}
+                className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>Add Guideline</span>
+              </motion.button>
+            </div>
+
+            <div className="space-y-4">
+              <AnimatePresence>
+                {guidelines.map((guideline, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex items-center gap-2"
+                  >
+                    <div className="flex-grow">
+                      <input
+                        type="text"
+                        placeholder={`Guideline ${index + 1}`}
+                        value={guideline}
+                        onChange={(e) => updateGuideline(index, e.target.value)}
+                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
+                      />
+                    </div>
+                    <motion.button
+                      onClick={() => removeGuideline(index)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      disabled={guidelines.length === 1}
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </motion.button>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           </div>
 
