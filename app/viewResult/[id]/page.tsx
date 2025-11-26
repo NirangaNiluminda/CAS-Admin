@@ -22,7 +22,8 @@ import {
   Share2,
   FileSpreadsheet,
   ChevronDown,
-  Printer
+  Printer,
+  RefreshCw
 } from 'lucide-react';
 
 // UI Components
@@ -59,13 +60,20 @@ interface ViolationSummary {
   violationTypes: string[];
 }
 
-// Create a custom fetcher function with timeout
+// Create a custom fetcher function with better error handling
 const fetcher = async (url: string) => {
+  // Clear any cached data first
+  if (typeof window !== 'undefined') {
+    // Clear specific cache entries to force fresh data
+    const cacheKeys = Object.keys(localStorage).filter(key => key.startsWith('swr'));
+    cacheKeys.forEach(key => localStorage.removeItem(key));
+  }
+
   const token = localStorage.getItem('token');
   console.log('🔐 FETCHER START - Token:', token ? 'Present' : 'Missing', 'URL:', url);
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000);
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // Reduced from 60s to 15s
 
   try {
     console.log('📡 Making API request to:', url);
@@ -76,6 +84,7 @@ const fetcher = async (url: string) => {
       },
       credentials: 'include',
       signal: controller.signal,
+      cache: 'no-cache' // Prevent caching
     });
 
     clearTimeout(timeoutId);
@@ -94,16 +103,19 @@ const fetcher = async (url: string) => {
           const refreshResponse = await fetch(`${apiUrl}/api/v1/refreshAdminToken`, {
             method: 'GET',
             credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
           });
 
           console.log('🔄 Refresh response status:', refreshResponse.status);
-          
+
           if (refreshResponse.ok) {
             const refreshData = await refreshResponse.json();
             console.log('🔄 Token refresh successful');
             localStorage.setItem('token', refreshData.accessToken);
-            
-            // Retry original request
+
+            // Retry original request with new token
             console.log('🔄 Retrying original request...');
             const retryResponse = await fetch(url, {
               headers: {
@@ -112,6 +124,7 @@ const fetcher = async (url: string) => {
               },
               credentials: 'include',
               signal: controller.signal,
+              cache: 'no-cache'
             });
 
             if (retryResponse.ok) {
@@ -122,6 +135,9 @@ const fetcher = async (url: string) => {
           }
         } catch (refreshError) {
           console.error('❌ Token refresh failed:', refreshError);
+          // Clear all auth data and redirect
+          localStorage.removeItem('token');
+          localStorage.removeItem('adminData');
           window.location.href = '/';
           throw new Error('Session expired');
         }
@@ -129,6 +145,12 @@ const fetcher = async (url: string) => {
 
       const errorText = await response.text();
       console.error('❌ Fetch failed:', response.status, errorText);
+
+      // For 404 or empty results, return empty array instead of error
+      if (response.status === 404) {
+        return { success: true, results: [] };
+      }
+
       throw new Error(`Error: ${response.statusText}`);
     }
 
@@ -138,10 +160,17 @@ const fetcher = async (url: string) => {
   } catch (error: any) {
     clearTimeout(timeoutId);
     console.error('❌ Fetch error:', error);
-    
+
     if (error.name === 'AbortError') {
       throw new Error('Request timeout');
     }
+
+    // Return empty data instead of throwing for network errors
+    if (error.message.includes('Failed to fetch') || error.message.includes('Network')) {
+      console.log('🔄 Network error, returning empty data');
+      return { success: true, results: [] };
+    }
+
     throw error;
   }
 };
@@ -241,6 +270,7 @@ export default function ViewResult() {
   const apiUrl = getApiUrl();
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [studentName, setStudentName] = useState('');
+  const [forceRefresh, setForceRefresh] = useState(0); // Add force refresh counter
 
   const [sortConfig, setSortConfig] = useState<{
     key: keyof QuizResult | null;
@@ -248,29 +278,73 @@ export default function ViewResult() {
   }>({ key: 'score', direction: 'desc' });
 
   // Use SWR for caching and data fetching with revalidation and retry
-  const { data: resultsData, error: resultsError, isLoading: isResultsLoading, mutate: mutateResults } = useSWR(
-    id ? `${apiUrl}/api/v1/results/${id}` : null,
+  const {
+    data: resultsData,
+    error: resultsError,
+    isLoading: isResultsLoading,
+    mutate: mutateResults
+  } = useSWR(
+    id ? `${apiUrl}/api/v1/results/${id}?refresh=${forceRefresh}` : null, // Add refresh param to bust cache
+    fetcher,
+    {
+      revalidateOnMount: true,
+      revalidateIfStale: true, // Changed to true
+      revalidateOnFocus: false,
+      shouldRetryOnError: false, // Changed to false to prevent multiple retries
+      dedupingInterval: 0, // No deduping to ensure fresh data
+      onError: (error) => {
+        console.error('Results fetch error:', error);
+      },
+      onSuccess: (data) => {
+        console.log('✅ Results fetched successfully:', data?.results?.length || 0, 'results');
+      }
+    }
+  );
+
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isResultsLoading) {
+        console.log('⏰ Loading timeout reached');
+        setLoadingTimeout(true);
+      }
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timer);
+  }, [isResultsLoading]);
+
+  const {
+    data: violationsData,
+    error: violationsError,
+    isLoading: isViolationsLoading,
+    mutate: mutateViolations
+  } = useSWR(
+    id ? `${apiUrl}/api/v1/violations/${id}/summary?refresh=${forceRefresh}` : null,
     fetcher,
     {
       revalidateOnMount: true,
       revalidateIfStale: true,
-      shouldRetryOnError: true,
-      errorRetryCount: 2, // Reduce retry count
-      errorRetryInterval: 2000,
-      dedupingInterval: 5000,
-      onError: (error) => {
-        console.error('Results fetch error:', error);
-      },
-      // Add fallback data
-      fallbackData: { success: true, results: [] }
+      shouldRetryOnError: false
     }
   );
 
-  const { data: violationsData, error: violationsError, isLoading: isViolationsLoading } = useSWR(
-    id ? `${apiUrl}/api/v1/violations/${id}/summary` : null,
-    fetcher,
-    { revalidateOnMount: true, revalidateIfStale: true }
-  );
+  // Add manual refresh function
+  const handleManualRefresh = useCallback(() => {
+    console.log('🔄 Manual refresh triggered');
+    setForceRefresh(prev => prev + 1);
+    setLoadingTimeout(false);
+    mutateResults();
+    mutateViolations();
+  }, [mutateResults, mutateViolations]);
+
+  // Auto-refresh when component mounts or quiz changes
+  useEffect(() => {
+    if (id && quiz) {
+      console.log('🔄 Auto-refreshing data for quiz:', id);
+      handleManualRefresh();
+    }
+  }, [id, quiz, handleManualRefresh]);
 
   // Derived state
   const quizResults = resultsData?.results || [];
@@ -287,9 +361,9 @@ export default function ViewResult() {
     ? Number((quizResults.reduce((acc: number, curr: QuizResult) => acc + curr.timeTaken, 0) / quizResults.length).toFixed(1))
     : 0;
 
-  const loading = isResultsLoading || isViolationsLoading;
-  const hasData = (resultsData?.results?.length > 0 || !resultsError) && (violationsData?.summary?.length >= 0 || !violationsError);
-  const error = resultsError || violationsError;
+  const loading = (isResultsLoading && !loadingTimeout) || isViolationsLoading;
+  const hasData = resultsData?.success && (resultsData?.results?.length >= 0); // Changed to >= 0 to handle empty arrays
+  const error = resultsError && !loadingTimeout;
 
   // Debug logs
   useEffect(() => {
@@ -297,8 +371,11 @@ export default function ViewResult() {
     console.log('Quiz:', quiz);
     console.log('Results Data:', resultsData);
     console.log('Violations Data:', violationsData);
+    console.log('Loading:', loading);
+    console.log('Has Data:', hasData);
+    console.log('Error:', error);
     if (error) console.error('Error:', error);
-  }, [id, quiz, resultsData, violationsData, error]);
+  }, [id, quiz, resultsData, violationsData, error, loading, hasData]);
 
   // Handle undefined ID
   useEffect(() => {
@@ -384,23 +461,53 @@ export default function ViewResult() {
       return 0;
     });
 
-  if (loading || (!hasData && !error)) {
+  // Add a timeout state
+  if (loadingTimeout) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col">
         <div className="w-full max-w-4xl mx-auto pt-4 px-4">
-          <Breadcrumbs items={[{ label: 'Loading Results...' }]} />
+          <Breadcrumbs items={[{ label: 'Loading Timeout' }]} />
         </div>
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mb-4"></div>
-            <p className="text-green-700 font-medium">Loading quiz results...</p>
-          </div>
+          <Card className="w-full max-w-md shadow-lg border-amber-200">
+            <CardHeader className="bg-amber-50">
+              <CardTitle className="text-amber-700 flex items-center gap-2">
+                <AlertTriangle size={20} />
+                Loading Timeout
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <p className="text-gray-600 mb-4">
+                The results are taking longer than expected to load. This might be because:
+              </p>
+              <ul className="text-sm text-gray-600 mb-4 list-disc list-inside space-y-1">
+                <li>The server is experiencing high load</li>
+                <li>There might be a network issue</li>
+                <li>The data is being processed</li>
+              </ul>
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleManualRefresh}
+                  className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  <RefreshCw size={16} className="mr-2" />
+                  Retry
+                </Button>
+                <Button
+                  onClick={() => router.push(`/viewquiz/${id}`)}
+                  className="flex-1 border-amber-200 text-amber-700 hover:bg-amber-50"
+                >
+                  Back to Quiz
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
   }
 
-  if (error || (!hasData && !loading)) {
+  if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col">
         <div className="w-full max-w-4xl mx-auto pt-4 px-4">
@@ -416,17 +523,43 @@ export default function ViewResult() {
             </CardHeader>
             <CardContent className="pt-6">
               <p className="text-gray-600 mb-4">
-                There was a problem fetching the quiz results. Please try again later. Check console for details.
+                There was a problem fetching the quiz results. Please try again.
               </p>
-              <Button
-                onClick={() => router.push(`/viewquiz/${id}`)}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-              >
-                <ArrowLeft size={16} className="mr-2" />
-                Return to Quizzes
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleManualRefresh}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <RefreshCw size={16} className="mr-2" />
+                  Try Again
+                </Button>
+                <Button
+                  onClick={() => router.push(`/viewquiz/${id}`)}
+                  className="flex-1 border-green-200 text-green-700 hover:bg-green-50"
+                >
+                  Back to Quiz
+                </Button>
+              </div>
             </CardContent>
           </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state only if we don't have data and are still loading
+  if (loading && !resultsData && !violationsData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col">
+        <div className="w-full max-w-4xl mx-auto pt-4 px-4">
+          <Breadcrumbs items={[{ label: 'Loading Results...' }]} />
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mb-4"></div>
+            <p className="text-green-700 font-medium">Loading quiz results...</p>
+            <p className="text-sm text-green-600 mt-2">Fetching the latest data</p>
+          </div>
         </div>
       </div>
     );
@@ -443,12 +576,12 @@ export default function ViewResult() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          
-            <Breadcrumbs items={[
-              { label: quiz?.title || 'Quiz', href: `/viewquiz/${quiz?._id || id}` },
-              { label: 'Results' }
-            ]} />
-          
+
+          <Breadcrumbs items={[
+            { label: quiz?.title || 'Quiz', href: `/viewquiz/${quiz?._id || id}` },
+            { label: 'Results' }
+          ]} />
+
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Button
@@ -465,14 +598,25 @@ export default function ViewResult() {
               </div>
             </div>
 
-            <Button
-              variant="outline"
-              onClick={() => router.push('/dashboard')}
-              className="hidden md:flex items-center gap-2 border-green-200 text-green-700 hover:bg-green-50"
-            >
-              <TvMinimalIcon size={16} />
-              Dashboard
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={handleManualRefresh}
+                className="border-green-200 text-green-700 hover:bg-green-50"
+                size="sm"
+              >
+                <RefreshCw size={16} className="mr-2" />
+                Refresh
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => router.push('/dashboard')}
+                className="hidden md:flex items-center gap-2 border-green-200 text-green-700 hover:bg-green-50"
+              >
+                <TvMinimalIcon size={16} />
+                Dashboard
+              </Button>
+            </div>
           </div>
 
           <Card className="mb-8 overflow-hidden border-0 shadow-xl rounded-2xl bg-white">
