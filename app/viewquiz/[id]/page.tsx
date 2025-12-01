@@ -773,22 +773,22 @@ export default function ViewQuiz() {
                 <motion.div
                   whileHover={{ y: -5 }}
                   transition={{ duration: 0.2 }}
-                  className="bg-white rounded-xl p-4 shadow-sm border border-purple-100"
+                  className="bg-white rounded-xl p-4 shadow-sm border border-green-100"
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <div className="bg-purple-100 rounded-lg p-2">
-                      <BarChart3 className="h-5 w-5 text-purple-600" />
+                    <div className="bg-green-100 rounded-lg p-2">
+                      <BarChart3 className="h-5 w-5 text-green-600" />
                     </div>
-                    <Badge variant="outline" className="bg-purple-50 text-purple-600">
-                      Avg Score
+                    <Badge variant="outline" className="bg-green-50 text-green-600">
+                      Progress
                     </Badge>
                   </div>
                   {isStatsLoading ? (
                     <Skeleton className="h-8 w-16 mt-1" />
                   ) : (
-                    <h4 className="text-2xl font-bold text-gray-800">{quizStats.averageScore}%</h4>
+                    <h4 className="text-2xl font-bold text-gray-800">{quizStats.completionRate}%</h4>
                   )}
-                  <p className="text-sm text-gray-500">Class Average</p>
+                  <p className="text-sm text-gray-500">Completion rate</p>
                 </motion.div>
               </div>
             </div>
